@@ -111,7 +111,7 @@ In that method you can get audio in from jack and write it out to jack.
 #else
 					bool startServer = true)
 #endif
-				throw(std::runtime_error);
+                noexcept(false);
 
       //create the object but don't actually create the client yet
 			AudioIO();
@@ -124,7 +124,7 @@ In that method you can get audio in from jack and write it out to jack.
 #else
 					bool startServer = true)
 #endif
-				throw(std::runtime_error);
+                noexcept(false);
 
 			///The Destructor
 			virtual ~AudioIO();
@@ -158,7 +158,7 @@ In that method you can get audio in from jack and write it out to jack.
 			  \param num an integer indicating the number of output ports to reserve
 			*/
 			virtual void reserveOutPorts(unsigned int num)
-				throw(std::runtime_error);
+                noexcept(false);
 			/**
 			   @brief Reserve input ports
 
@@ -172,17 +172,17 @@ In that method you can get audio in from jack and write it out to jack.
 			  \param num an integer indicating the number of input ports to reserve
 			*/
 			virtual void reserveInPorts(unsigned int num)
-				throw(std::runtime_error);
+                noexcept(false);
 
 			///Start the jack client.
 			void start()
-				throw(std::runtime_error);
+                noexcept(false);
 			///Stop the jack client.
 			void stop()
-				throw(std::runtime_error);
+                noexcept(false);
 			///Close the jack client.
 			void close()
-				throw(std::runtime_error);
+                noexcept(false);
 
 			///Get the number of jack input ports
 			unsigned int inPorts();
@@ -195,14 +195,14 @@ In that method you can get audio in from jack and write it out to jack.
 			  \return the number of total input ports
 			*/
 			virtual unsigned int addInPort(std::string name)
-				throw(std::runtime_error);
+                noexcept(false);
 			/**
 			   @brief Add a jack output port to our client
 			  \param name string the name of the port to add
 			  \return the number of total output ports
 			*/
 			virtual unsigned int addOutPort(std::string name)
-				throw(std::runtime_error);
+                noexcept(false);
 
 			/**
 			   @brief Connect our output to a jack client's source port.
@@ -210,41 +210,41 @@ In that method you can get audio in from jack and write it out to jack.
 			  \param sourcePortName the client:port name to connect to
 			*/
 			void connectTo(unsigned int index, std::string sourcePortName) 
-				throw(std::range_error, std::runtime_error);
+                noexcept(false);
 			/**
 			   @brief Connect our input to a jack client's destination port.
 			  \param index the index of our input port to connect to
 			  \param destPortName the client:port name to connect from
 			*/
 			void connectFrom(unsigned int index, std::string destPortName)
-				throw(std::range_error, std::runtime_error);
+                noexcept(false);
 			/**
 			   @brief Connect our output port to a physical output port
 			  \param index the index of our output port to connect from
 			  \param physical_index the physical output port index to connect to
 			*/
 			void connectToPhysical(unsigned int index, unsigned physical_index)
-				throw(std::range_error, std::runtime_error);
+                noexcept(false);
 			/**
 			   @brief Connect our input port to a physical input port
 			  \param index the index of our input port to connect to
 			  \param physical_index the physical input port index to connect from
 			*/
 			void connectFromPhysical(unsigned int index, unsigned physical_index)
-				throw(std::range_error, std::runtime_error);
+                noexcept(false);
 			///Disconnect input port from all connections
 			void disconnectInPort(unsigned int index)
-				throw(std::range_error, std::runtime_error);
+                noexcept(false);
 			///Disconnect output port from all connections
 			void disconnectOutPort(unsigned int index)
-				throw(std::range_error, std::runtime_error);
+                noexcept(false);
 
 			///Get the number of connections to our input port
 			unsigned int numConnectionsInPort(unsigned int index)
-				throw(std::range_error);
+                noexcept(false);
 			///Get the number of connections to our output port
 			unsigned int numConnectionsOutPort(unsigned int index)
-				throw(std::range_error);
+                noexcept(false);
 
 			/**
 			   @brief Get the number of physical audio input ports
@@ -259,10 +259,10 @@ In that method you can get audio in from jack and write it out to jack.
 
 			///Get the name of our client's input port
 			std::string getInputPortName(unsigned int index)
-				throw(std::range_error);
+                noexcept(false);
 			///Get the name of our client's output port
 			std::string getOutputPortName(unsigned int index)
-				throw(std::range_error);
+                noexcept(false);
 
 			/**
 			 	@brief This method is called when Jack shuts down.
@@ -278,9 +278,9 @@ In that method you can get audio in from jack and write it out to jack.
 			*/
 			float getCpuLoad();
 			///Get the sample rate
-			jack_nframes_t getSampleRate();
+            jack_nframes_t getSampleRate() const;
 			///Get the jack buffer size
-			jack_nframes_t getBufferSize();
+            jack_nframes_t getBufferSize() const;
 			///Check to see if the client is running in real time mode
 			bool isRealTime(){return jack_is_realtime(mJackClient);}
 			/**

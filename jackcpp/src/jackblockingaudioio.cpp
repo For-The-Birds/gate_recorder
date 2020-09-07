@@ -31,7 +31,7 @@ using std::endl;
 JackCpp::BlockingAudioIO::BlockingAudioIO(std::string name,
 		unsigned int inChans, unsigned int outChans,
 		unsigned int inBufSize, unsigned int outBufSize,
-		bool startServer) throw(std::runtime_error):
+        bool startServer) noexcept(false):
 	AudioIO(name, inChans, outChans, startServer),
 	mOutputBufferMaxSize((unsigned int)getSampleRate()),
 	mInputBufferMaxSize((unsigned int)getSampleRate())
@@ -105,21 +105,21 @@ bool JackCpp::BlockingAudioIO::tryRead(unsigned int channel, jack_default_audio_
 }
 
 void JackCpp::BlockingAudioIO::reserveOutPorts(unsigned int num)
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	AudioIO::reserveOutPorts(num);
 	mUserOutBuff.reserve(num);
 }
 
 void JackCpp::BlockingAudioIO::reserveInPorts(unsigned int num)
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	AudioIO::reserveInPorts(num);
 	mUserInBuff.reserve(num);
 }
 
 unsigned int JackCpp::BlockingAudioIO::addInPort(std::string name)
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	unsigned int ret;
 	if(getState() == AudioIO::active)
@@ -130,7 +130,7 @@ unsigned int JackCpp::BlockingAudioIO::addInPort(std::string name)
 }
 
 unsigned int JackCpp::BlockingAudioIO::addOutPort(std::string name)
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	unsigned int ret;
 	if(getState() == AudioIO::active)

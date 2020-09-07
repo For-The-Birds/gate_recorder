@@ -55,7 +55,7 @@ audio from a Jack client.
 #else
 					bool startServer = true)
 #endif
-					throw(std::runtime_error);
+                    noexcept(false);
 			virtual ~BlockingAudioIO();
 
 			/**
@@ -115,10 +115,10 @@ audio from a Jack client.
 			//add ports while the client is active
 			///This method is useless at the moment.
 			virtual void reserveOutPorts(unsigned int num)
-				throw(std::runtime_error);
+                noexcept(false);
 			///This method is useless at the moment.
 			virtual void reserveInPorts(unsigned int num)
-				throw(std::runtime_error);
+                noexcept(false);
 
 			/**
 			   @brief Add an input port to our client
@@ -130,7 +130,7 @@ audio from a Jack client.
 			  \sa AudioIO::addInPort(std::string name)
 			*/
 			virtual unsigned int addInPort(std::string name)
-				throw(std::runtime_error);
+                noexcept(false);
 			/**
 			   @brief Add an output port to our client
 
@@ -141,7 +141,7 @@ audio from a Jack client.
 			  \sa AudioIO::addOutPort(std::string name)
 			*/
 			virtual unsigned int addOutPort(std::string name)
-				throw(std::runtime_error);
+                noexcept(false);
 
 		protected:
 			/**

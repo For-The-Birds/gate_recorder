@@ -84,7 +84,7 @@ jack_client_t * JackCpp::AudioIO::client(){
 }
 
 JackCpp::AudioIO::AudioIO(std::string name, unsigned int inPorts, unsigned int outPorts, bool startServer) 
-	throw(std::runtime_error) : mCmdBuffer(256,true)
+    noexcept(false) : mCmdBuffer(256,true)
 {
   createClient(name, inPorts, outPorts, startServer);
 }
@@ -94,7 +94,7 @@ JackCpp::AudioIO::AudioIO() : mCmdBuffer(256,true), mJackClient(NULL)
 }
 
 void JackCpp::AudioIO::createClient(std::string name, unsigned int inPorts, unsigned int outPorts, bool startServer) 
-	throw(std::runtime_error) 
+    noexcept(false)
 {
   if (mJackClient) {
     //XXX close it
@@ -182,7 +182,7 @@ bool JackCpp::AudioIO::portExists(std::string name){
 }
 
 void JackCpp::AudioIO::reserveOutPorts(unsigned int num)
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	if(getState() == active)
 		throw std::runtime_error("reserving ports while the client is running is not supported yet.");
@@ -191,7 +191,7 @@ void JackCpp::AudioIO::reserveOutPorts(unsigned int num)
 }
 
 void JackCpp::AudioIO::reserveInPorts(unsigned int num)
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	if(getState() == active)
 		throw std::runtime_error("reserving ports while the client is running is not supported yet.");
@@ -208,7 +208,7 @@ unsigned int JackCpp::AudioIO::outPorts(){
 }
 
 unsigned int JackCpp::AudioIO::addInPort(std::string name)
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	if (mJackState == active && mInputPorts.size() == mInputPorts.capacity())
 		throw std::runtime_error("trying to add input ports while the client is running and there are not reserved ports");
@@ -244,7 +244,7 @@ unsigned int JackCpp::AudioIO::addInPort(std::string name)
 //add an output port, if we are active then deactivate and reactivate after
 //maybe we can do this more intelligently in the future?
 unsigned int JackCpp::AudioIO::addOutPort(std::string name)
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	if (mJackState == active && mOutputPorts.size() == mOutputPorts.capacity())
 		throw std::runtime_error("trying to add output ports while the client is running and there are not reserved ports");
@@ -278,7 +278,7 @@ unsigned int JackCpp::AudioIO::addOutPort(std::string name)
 }
 
 void JackCpp::AudioIO::connectTo(unsigned int index, std::string destPortName)
-	throw(std::range_error, std::runtime_error)
+    noexcept(false)
 {
 	int connect_ret;
 	if (mJackState != active)
@@ -298,7 +298,7 @@ void JackCpp::AudioIO::connectTo(unsigned int index, std::string destPortName)
 }
 
 void JackCpp::AudioIO::connectFrom(unsigned int index, std::string sourcePortName)
-	throw(std::range_error, std::runtime_error)
+    noexcept(false)
 {
 	int connect_ret;
 	if (mJackState != active)
@@ -319,7 +319,7 @@ void JackCpp::AudioIO::connectFrom(unsigned int index, std::string sourcePortNam
 
 //XXX should the "free" free the names that these ports point too as well?
 void JackCpp::AudioIO::connectToPhysical(unsigned int index, unsigned physical_index)
-	throw(std::range_error, std::runtime_error)
+    noexcept(false)
 {
 	const char **ports;
 	if (mJackState != active)
@@ -343,7 +343,7 @@ void JackCpp::AudioIO::connectToPhysical(unsigned int index, unsigned physical_i
 
 //XXX should the "free" free the names that these ports point too as well?
 void JackCpp::AudioIO::connectFromPhysical(unsigned int index, unsigned physical_index)
-	throw(std::range_error, std::runtime_error)
+    noexcept(false)
 {
 	const char **ports;
 	if (mJackState != active)
@@ -366,7 +366,7 @@ void JackCpp::AudioIO::connectFromPhysical(unsigned int index, unsigned physical
 }
 
 void JackCpp::AudioIO::disconnectInPort(unsigned int index)
-	throw(std::range_error, std::runtime_error)
+    noexcept(false)
 {
 	if (mJackState != active)
 		throw std::runtime_error("client must be active before disconnecting ports");
@@ -377,7 +377,7 @@ void JackCpp::AudioIO::disconnectInPort(unsigned int index)
 }
 
 void JackCpp::AudioIO::disconnectOutPort(unsigned int index)
-	throw(std::range_error, std::runtime_error)
+    noexcept(false)
 {
 	if (mJackState != active)
 		throw std::runtime_error("client must be active before disconnecting ports");
@@ -388,7 +388,7 @@ void JackCpp::AudioIO::disconnectOutPort(unsigned int index)
 }
 
 unsigned int JackCpp::AudioIO::numConnectionsInPort(unsigned int index)
-	throw(std::range_error)
+    noexcept(false)
 {
 	if(index < mInputPorts.size())
 		return jack_port_connected(mInputPorts[index]);
@@ -397,7 +397,7 @@ unsigned int JackCpp::AudioIO::numConnectionsInPort(unsigned int index)
 }
 
 unsigned int JackCpp::AudioIO::numConnectionsOutPort(unsigned int index)
-	throw(std::range_error)
+    noexcept(false)
 {
 	if(index < mOutputPorts.size())
 		return jack_port_connected(mOutputPorts[index]);
@@ -433,7 +433,7 @@ unsigned int JackCpp::AudioIO::numPhysicalSourcePorts(){
 }
 
 std::string JackCpp::AudioIO::getInputPortName(unsigned int index)
-	throw(std::range_error)
+    noexcept(false)
 {
 	if(index < mInputPorts.size())
 		return std::string(jack_port_name(mInputPorts[index]));
@@ -442,7 +442,7 @@ std::string JackCpp::AudioIO::getInputPortName(unsigned int index)
 
 }
 std::string JackCpp::AudioIO::getOutputPortName(unsigned int index)
-	throw(std::range_error)
+    noexcept(false)
 {
 	if(index < mOutputPorts.size())
 		return std::string(jack_port_name(mOutputPorts[index]));
@@ -451,7 +451,7 @@ std::string JackCpp::AudioIO::getOutputPortName(unsigned int index)
 }
 
 void JackCpp::AudioIO::start()
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	//update these so that the callback can use them
 	if(mJackState != active){
@@ -464,7 +464,7 @@ void JackCpp::AudioIO::start()
 }
 
 void JackCpp::AudioIO::stop()
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	if (jack_deactivate(mJackClient) != 0)
 		throw std::runtime_error("cannot deactivate the client");
@@ -472,7 +472,7 @@ void JackCpp::AudioIO::stop()
 }
 
 void JackCpp::AudioIO::close()
-	throw(std::runtime_error)
+    noexcept(false)
 {
 	if (jack_client_close(mJackClient) != 0)
 		throw std::runtime_error("cannot close the client");
@@ -483,11 +483,11 @@ float JackCpp::AudioIO::getCpuLoad(){
 	return jack_cpu_load(mJackClient);
 }
 
-jack_nframes_t JackCpp::AudioIO::getSampleRate(){
+jack_nframes_t JackCpp::AudioIO::getSampleRate() const {
 	return jack_get_sample_rate(mJackClient);
 }
 
-jack_nframes_t JackCpp::AudioIO::getBufferSize(){
+jack_nframes_t JackCpp::AudioIO::getBufferSize() const {
 	return jack_get_buffer_size(mJackClient);
 }
 
