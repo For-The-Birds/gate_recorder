@@ -1,9 +1,17 @@
-#include <iostream>
+#include <stdlib.h>
 
-using namespace std;
+#include "gaterecorder.h"
 
-int main()
+using namespace kfr;
+
+int main(int argc, char ** argv)
 {
-    cout << "Hello World!" << endl;
+    float l = -24;
+    if (argc > 1)
+        l = atof(argv[1]);
+    GateRecorder gr(l);
+
+    while(1)
+        sleep(100500);
     return 0;
 }
