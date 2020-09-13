@@ -31,3 +31,19 @@ int AudioDriverJack::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::aud
     process_frame(inBufs[0], outBufs[0], nframes);
     return 0;
 }
+
+AudioDriverAlsa::AudioDriverAlsa(float loudness, float cutoff_, float rolloff_)
+    : acd("hw:0,0", 48000, 1, frames, SND_PCM_FORMAT_FLOAT)
+{
+    gate_recorder.reset(
+                new GateRecorder(loudness, cutoff_, rolloff_,
+                                 48000, frames)
+                );
+
+    acd.open();
+    while(true)
+    {
+        auto captured = acd.capture_into_buffer(reinterpret_cast<char*>(buffer.data()), frames);
+        process_frame(buffer.data(), nullptr, captured);
+    }
+}

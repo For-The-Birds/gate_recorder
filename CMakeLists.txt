@@ -23,8 +23,21 @@ set(CXXOPTS_BUILD_TESTS OFF)
 set(CXXOPTS_ENABLE_INSTALL OFF)
 add_subdirectory(cxxopts)
 
+add_library(alsacpp STATIC
+    alsacpp/ALSADevices.cpp
+    )
+
+target_include_directories(alsacpp PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/alsacpp>
+    $<INSTALL_INTERFACE:include/jackcpp>
+    )
+
 add_executable(gate_recorder main.cpp
     gaterecorder.cpp
     audiodriver.cpp)
 
-target_link_libraries(gate_recorder kfr kfr_dft kfr_io jackcpp jack tcmalloc cxxopts)
+target_link_libraries(gate_recorder
+    kfr kfr_dft kfr_io
+    jackcpp jack
+    alsacpp asound
+    tcmalloc cxxopts)
