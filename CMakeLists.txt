@@ -20,4 +20,4 @@ add_subdirectory(kfr)
 
 add_executable(gate_recorder main.cpp gaterecorder.cpp)
 
-target_link_libraries(gate_recorder kfr kfr_io jackcpp jack tcmalloc)
+target_link_libraries(gate_recorder kfr kfr_dft kfr_io jackcpp jack tcmalloc)

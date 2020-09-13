@@ -15,14 +15,14 @@ public:
     static constexpr size_t fftsize = 1024;
     static constexpr size_t chunk_size = 128;
 
-    GateRecorder(float loudness);
+    GateRecorder(float loudness, float cutoff_, float rolloff_);
 
     virtual int audioCallback(jack_nframes_t nframes, audioBufVector inBufs,
         audioBufVector outBufs);
 
     size_t frames_in_seconds(size_t seconds) const;
 private:
-    float loudness_threshold;
+    float loudness_threshold, cutoff, rolloff;
     buffer_type frames_buffer;
     kfr::audio_format af;
 
@@ -33,6 +33,10 @@ private:
     bool recording = false;
 
     buffer_type bflush(size_t tail_return = 0);
+
+    kfr::zpk<kfr::fbase> filt;
+    std::vector<kfr::biquad_params<kfr::fbase>> bqs;
+
 };
 
 #endif // GATERECORDER_H
