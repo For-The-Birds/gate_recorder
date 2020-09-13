@@ -1,9 +1,9 @@
 #include <stdlib.h>
+#include <unistd.h>
 
-#include "gaterecorder.h"
+#include "audiodriver.h"
 #include <cxxopts.hpp>
 
-using namespace kfr;
 
 int main(int argc, const char ** argv)
 {
@@ -19,10 +19,11 @@ int main(int argc, const char ** argv)
     auto o = options.parse(argc, argv);
 
     chdir(o["o"].as<std::string>().c_str());
-    GateRecorder gr(
-                o["l"].as<float>(),
-                o["c"].as<float>(),
-                o["r"].as<float>());
+
+    auto adj = AudioDriverJack(
+            o["l"].as<float>(),
+            o["c"].as<float>(),
+            o["r"].as<float>());
 
     while(1)
         sleep(100500);

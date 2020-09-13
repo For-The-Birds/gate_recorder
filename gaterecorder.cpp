@@ -26,17 +26,19 @@ void audio_dumper(GateRecorder::buffer_type buf, kfr::audio_format af)
     }
 }
 
-GateRecorder::GateRecorder(float loudness, float cutoff_, float rolloff_)
-    : JackCpp::AudioIO("gate_recorder", 2, 2)
-    , loudness_threshold(loudness)
+GateRecorder::GateRecorder(float loudness, float cutoff_, float rolloff_,
+                           size_t sample_rate_, size_t buffer_size_)
+    : loudness_threshold(loudness)
     , cutoff(cutoff_)
     , rolloff(rolloff_)
+    , sample_rate(sample_rate_)
+    , buffer_size(buffer_size_)
 {
     printf("%s, loudness_threshold: %.2f\n", kfr::library_version(), loudness_threshold);
 
     //chunks = getBufferSize()/chunk_size;
 
-    af.samplerate = getSampleRate();
+    af.samplerate = sample_rate;
     af.channels = 1;
 
     max_frames_wait = frames_in_seconds(10);
@@ -48,23 +50,25 @@ GateRecorder::GateRecorder(float loudness, float cutoff_, float rolloff_)
     if (rolloff > 0 && cutoff > 0)
     {
         printf("Using highpass filter cutoff %2.f, rolloff %.2f\n", cutoff, rolloff);
-        filt = kfr::iir_highpass(kfr::bessel<kfr::fbase>(rolloff), cutoff, getSampleRate());
+        filt = kfr::iir_highpass(kfr::bessel<kfr::fbase>(rolloff), cutoff, sample_rate);
         bqs = kfr::to_sos(filt);
     }
 
-    start();
 }
 
-int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioBufVector inBufs, JackCpp::AudioIO::audioBufVector outBufs)
+void GateRecorder::process_frame(float *buf, float *obuf, size_t nsamples)
 {
-    frames_buffer.emplace_back(kfr::make_univector(inBufs[0], nframes));
+    frames_buffer.emplace_back(kfr::make_univector(buf, nsamples));
 
     if (rolloff > 0 && cutoff > 0)
     {
         kfr::univector<float> filtered = kfr::biquad<32>(bqs, frames_buffer.back());
-        float * p = &outBufs[0][0];
-        for (auto & v : filtered)
-            *p++ = v;
+        if (obuf)
+        {
+            float * p = obuf;
+            for (auto & v : filtered)
+                *p++ = v;
+        }
         frames_buffer.back() = filtered;
     }
 
@@ -137,12 +141,11 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
     }
 
     fflush(stdout);
-    return 0;
 }
 
 size_t GateRecorder::frames_in_seconds(size_t seconds) const
 {
-    return getSampleRate()*seconds/getBufferSize();
+    return sample_rate*seconds/buffer_size;
 }
 
 GateRecorder::buffer_type GateRecorder::bflush(size_t tail_return)

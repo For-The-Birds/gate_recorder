@@ -5,28 +5,24 @@
 
 #include <deque>
 
-#include "jackaudioio.hpp"
-
-class GateRecorder : public JackCpp::AudioIO
+class GateRecorder
 {
 public:
-    using ftype = jack_default_audio_sample_t;
+    using ftype = float;
     using buffer_type = std::deque<kfr::univector<ftype>>;
     static constexpr size_t fftsize = 1024;
     static constexpr size_t chunk_size = 128;
 
-    GateRecorder(float loudness, float cutoff_, float rolloff_);
+    GateRecorder(float loudness, float cutoff_, float rolloff_, size_t sample_rate_, size_t buffer_size_);
 
-    virtual int audioCallback(jack_nframes_t nframes, audioBufVector inBufs,
-        audioBufVector outBufs);
-
+    void process_frame(float *buf, float *obuf, size_t nsamples);
     size_t frames_in_seconds(size_t seconds) const;
 private:
     float loudness_threshold, cutoff, rolloff;
     buffer_type frames_buffer;
     kfr::audio_format af;
 
-    size_t chunks;
+    size_t sample_rate, buffer_size;
     size_t frames_past_loud = 0, max_frames_wait;
     size_t frames_begin, frames_end;
     size_t buffer_limit_soft, buffer_limit_hard;
