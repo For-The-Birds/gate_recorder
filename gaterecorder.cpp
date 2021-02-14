@@ -68,36 +68,46 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
         frames_buffer.back() = filtered;
     }
 
+    if (recording)
+        frames_out.emplace_back(frames_buffer.back());
+
     std::map<float, int> loud_samples;
+    int loud_samples_total = 0;
     for (auto & sample : frames_buffer.back())
     {
         auto l = kfr::energy_to_loudness(sample);
-        for (float i=12; i >= -8; i -= 2)
+        if (l > loudness_threshold)
+            ++loud_samples_total;
+        for (int i=-8; i <= 12; i += 2)
         {
             auto t = loudness_threshold - i;
             loud_samples[t];
             if (l > t) {
                 ++loud_samples[t];
+                break;
             }
         }
     }
 
     for (auto & ls : loud_samples)
-        printf("%5.2f(%3d)  ", ls.first, ls.second);
+        if (ls.first < loudness_threshold)
+            printf("%5.2f(%3d)  ", ls.first, ls.second);
+        else
+            printf("%5.2f{%3d}  ", ls.first, ls.second);
 
-    if (loud_samples[loudness_threshold] > 100)
+    printf("   ls:%3d", loud_samples[loudness_threshold]);
+    if (loud_samples_total > 100)
     {
-        printf(" [%3d]\n", loud_samples[loudness_threshold]);
         frames_past_loud = 0;
         if (!recording)
         {
             while(frames_buffer.size() > frames_begin)
                 frames_buffer.pop_front();
             recording = true;
+            if (frames_out.size() == 0)
+                frames_out = frames_buffer;
         }
     }
-    else
-        printf("\r");
 
 
     ++frames_past_loud;
@@ -105,8 +115,10 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
     if (frames_past_loud == max_frames_wait && recording)
     {
         // Too long silence. Normal end of recording.
-        frames_buffer = bflush(frames_past_loud - frames_end);
+        frames_buffer = bflush(max_frames_wait - frames_end);
         recording = false;
+
+        frames_out.clear();
     }
 
     if (frames_past_loud < max_frames_wait && recording)
@@ -127,6 +139,15 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
         }
     }
 
+    printf("   fo:%3lu", frames_out.size());
+    if (frames_out.size() > 0)
+    {
+        std::copy_n(frames_out.front().begin(), nframes, outBufs[0]);
+        frames_out.pop_front();
+    }
+    else
+        std::fill_n(outBufs[0], nframes, 0);
+
     if (frames_past_loud > max_frames_wait)
     {
         // Too long after last loud frame. This means that we are not recording
@@ -136,6 +157,10 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
         frames_past_loud = max_frames_wait+1; // avoid overflow
     }
 
+    if (recording)
+        printf("\n");
+    else
+        printf("\r");
     fflush(stdout);
     return 0;
 }

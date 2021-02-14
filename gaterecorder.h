@@ -30,6 +30,7 @@ private:
     size_t frames_past_loud = 0, max_frames_wait;
     size_t frames_begin, frames_end;
     size_t buffer_limit_soft, buffer_limit_hard;
+    buffer_type frames_out;
     bool recording = false;
 
     buffer_type bflush(size_t tail_return = 0);
