@@ -51,6 +51,7 @@ private:
     void update_ebu();
     float how_loud();
     float how_loud_short();
+    bool ebu_valid();
 };
 
 #endif // GATERECORDER_H
