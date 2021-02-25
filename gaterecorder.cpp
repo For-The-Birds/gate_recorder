@@ -68,8 +68,8 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
         frames_buffer.back() = filtered;
     }
 
-    if (recording)
-        frames_out.emplace_back(frames_buffer.back());
+    if (passthrough)
+        frames_passthrough.emplace_back(frames_buffer.back());
 
     std::map<float, int> loud_samples;
     int loud_samples_total = 0;
@@ -103,22 +103,25 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
         {
             while(frames_buffer.size() > frames_begin)
                 frames_buffer.pop_front();
-            recording = true;
-            if (frames_out.size() == 0)
-                frames_out = frames_buffer;
+            passthrough = recording = true;
+            if (frames_passthrough.size() == 0)
+                frames_passthrough = frames_buffer;
         }
     }
 
 
     ++frames_past_loud;
 
+    if (frames_past_loud > frames_end && passthrough)
+    {
+        passthrough = false;
+    }
+
     if (frames_past_loud == max_frames_wait && recording)
     {
         // Too long silence. Normal end of recording.
         frames_buffer = bflush(max_frames_wait - frames_end);
         recording = false;
-
-        frames_out.clear();
     }
 
     if (frames_past_loud < max_frames_wait && recording)
@@ -139,11 +142,11 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
         }
     }
 
-    printf("   fo:%3lu", frames_out.size());
-    if (frames_out.size() > 0)
+    printf("   fo:%3lu", frames_passthrough.size());
+    if (frames_passthrough.size() > 0)
     {
-        std::copy_n(frames_out.front().begin(), nframes, outBufs[0]);
-        frames_out.pop_front();
+        std::copy_n(frames_passthrough.front().begin(), nframes, outBufs[0]);
+        frames_passthrough.pop_front();
     }
     else
         std::fill_n(outBufs[0], nframes, 0);
