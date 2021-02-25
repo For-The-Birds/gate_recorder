@@ -21,7 +21,7 @@ public:
                  float rolloff_);
 
     virtual int audioCallback(jack_nframes_t nframes, audioBufVector inBufs,
-        audioBufVector outBufs);
+        audioBufVector outBufs) noexcept;
 
     size_t frames_in_seconds(size_t seconds) const;
 private:

@@ -72,7 +72,7 @@ GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
     start();
 }
 
-int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioBufVector inBufs, JackCpp::AudioIO::audioBufVector outBufs)
+int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioBufVector inBufs, JackCpp::AudioIO::audioBufVector outBufs) noexcept
 {
     frames_buffer.emplace_back(kfr::make_univector(inBufs[0], nframes));
 

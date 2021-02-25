@@ -9,7 +9,9 @@ bool quiet;
 
 int main(int argc, const char ** argv)
 {
-    cxxopts::Options options("gate_recorder", "Record loud audio frames");
+    cxxopts::Options options("gate_recorder",
+                             "Records loud audio frames, "
+                             "like gate but keeps some pre-buffer ans post-buffer");
     options.add_options()
         ("l,loudness", "Loudness threshold delta for recording", cxxopts::value<float>()->default_value("18"))
         ("p,passthrough", "Loudness threshold delta for passthrough", cxxopts::value<float>()->default_value("13"))
@@ -19,18 +21,35 @@ int main(int argc, const char ** argv)
         ("q,quiet", "No output", cxxopts::value<bool>()->default_value("false"))
         ;
 
-    auto o = options.parse(argc, argv);
+    try {
+        auto o = options.parse(argc, argv);
 
-    quiet = o["q"].as<bool>();
-    chdir(o["o"].as<std::string>().c_str());
-    GateRecorder gr(
-                o["l"].as<float>(),
-                o["p"].as<float>(),
-                o["c"].as<float>(),
-                o["r"].as<float>());
+        quiet = o["q"].as<bool>();
+        chdir(o["o"].as<std::string>().c_str());
+        GateRecorder gr(
+                    o["l"].as<float>(),
+                    o["p"].as<float>(),
+                    o["c"].as<float>(),
+                    o["r"].as<float>());
+        while(1)
+            sleep(100500);
 
-    while(1)
-        sleep(100500);
+    }
+    catch (cxxopts::OptionException & e)
+    {
+        std::cout << e.what() << "\n\n" << options.help();
+        return 0;
+    }
+    catch (std::exception & e)
+    {
+        std::cout << e.what();
+        return -1;
+    }
+    catch(...)
+    {
+        std::cout << "unknown exception";
+        return -2;
+    }
 
     return 0;
 }
