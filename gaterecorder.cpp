@@ -41,13 +41,13 @@ void audio_dumper(GateRecorder::buffer_type buf, kfr::audio_format af)
 GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
                            float rolloff_)
     : JackCpp::AudioIO("gate_recorder", 2, 2)
-    , loudness_delta_threshold(loudness)
+    , loudness_threshold(loudness)
     , passthrough_delta_threshold(loudness_p)
     , cutoff(cutoff_)
     , rolloff(rolloff_)
     , ebur128(getSampleRate(), {kfr::Speaker::Mono}, 3)
 {
-    my_printf("%s, loudness_threshold: %.2f\n", kfr::library_version(), loudness_delta_threshold);
+    my_printf("%s, loudness_threshold: %.2f\n", kfr::library_version(), loudness_threshold);
 
     //chunks = getBufferSize()/chunk_size;
 
@@ -90,7 +90,7 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
     if (passthrough)
         frames_passthrough.emplace_back(frames_buffer.back());
 
-    bool frame_loud = how_loud() > loudness_delta_threshold;
+    bool frame_loud = loudness_momentary > loudness_threshold;
     if (frame_loud)
     {
         frames_past_loud = 0;
@@ -107,18 +107,21 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
 
     if (!passthrough)
     {
-        passthrough = how_loud_short() > passthrough_delta_threshold;
+        passthrough = loudness_short > passthrough_delta_threshold;
         frames_passed_through = 0;
     }
-    if (passthrough && frames_passthrough.size() == 0)
-        frames_passthrough = buffer_type(
-                    frames_buffer.end()-std::min(frames_buffer.size(), frames_begin),
-                    frames_buffer.end());
-
-    if (frames_passed_through > frames_end)
+    if (passthrough)
     {
-        passthrough = false;
-        ebur128.reset();
+        if (frames_passthrough.size() == 0)
+            frames_passthrough = buffer_type(
+                        frames_buffer.end()-std::min(frames_buffer.size(), frames_begin),
+                        frames_buffer.end());
+
+        if (frames_passed_through > frames_end)
+        {
+            passthrough = false;
+            ebur128.reset();
+        }
     }
 
     if (frames_past_loud == max_frames_wait && recording)
@@ -169,9 +172,9 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
 
     if (frame_loud)
         my_printf("  l\n");
-    else if (how_loud() > passthrough_delta_threshold)
+    else if (loudness_momentary > passthrough_delta_threshold)
         my_printf("  m\n");
-    else if (how_loud_short() > passthrough_delta_threshold)
+    else if (loudness_short > passthrough_delta_threshold)
         my_printf("  s\n");
     else
         my_printf("\r");

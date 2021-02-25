@@ -25,7 +25,7 @@ public:
 
     size_t frames_in_seconds(size_t seconds) const;
 private:
-    float loudness_delta_threshold, cutoff, rolloff;
+    float loudness_threshold, cutoff, rolloff;
     buffer_type frames_buffer;
     kfr::audio_format af;
 
@@ -49,9 +49,6 @@ private:
     kfr::univector<ftype> ebuffer;
     kfr::ebu_r128<ftype> ebur128;
     void update_ebu();
-    float how_loud();
-    float how_loud_short();
-    bool ebu_valid();
 };
 
 #endif // GATERECORDER_H
