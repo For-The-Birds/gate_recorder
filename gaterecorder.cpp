@@ -27,7 +27,7 @@ void audio_dumper(GateRecorder::buffer_type buf, kfr::audio_format af)
 {
     auto filename = get_filename();
     size_t sec = buf.size() * buf.front().size() / af.samplerate;
-    printf("\nAW %lu sec '%s'\n", sec, filename.c_str());
+    my_printf("\nAW %lu sec '%s'\n", sec, filename.c_str());
     fflush(stdout);
     kfr::audio_writer_wav<float> aw(
                  kfr::open_file_for_writing(filename),
@@ -47,7 +47,7 @@ GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
     , rolloff(rolloff_)
     , ebur128(getSampleRate(), {kfr::Speaker::Mono}, 3)
 {
-    printf("%s, loudness_threshold: %.2f\n", kfr::library_version(), loudness_delta_threshold);
+    my_printf("%s, loudness_threshold: %.2f\n", kfr::library_version(), loudness_delta_threshold);
 
     //chunks = getBufferSize()/chunk_size;
 
@@ -62,7 +62,7 @@ GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
 
     if (rolloff > 0 && cutoff > 0)
     {
-        printf("Using highpass filter cutoff %2.f, rolloff %.2f\n", cutoff, rolloff);
+        my_printf("Using highpass filter cutoff %2.f, rolloff %.2f\n", cutoff, rolloff);
         filt = kfr::iir_highpass(kfr::bessel<kfr::fbase>(rolloff), cutoff, getSampleRate());
         bqs = kfr::to_sos(filt);
     }
@@ -136,24 +136,24 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
         {
             if (frames_buffer.size() > buffer_limit_hard)
             {
-                printf("hard hit\n");
+                my_printf("hard hit\n");
                 bflush();
             }
             else if(frames_past_loud > max_frames_wait/3)
             {
-                printf("soft hit\n");
+                my_printf("soft hit\n");
                 frames_buffer = bflush(max_frames_wait/3 - frames_end);
             }
         }
     }
 
-    printf("  fp:%3lu", frames_passthrough.size());
+    my_printf("  fp:%3lu", frames_passthrough.size());
     if (frames_passthrough.size() > 0)
     {
         std::copy_n(frames_passthrough.front().begin(), nframes, outBufs[0]);
         frames_passthrough.pop_front();
         ++frames_passed_through;
-        printf(" fpt:%3u", frames_passed_through);
+        my_printf(" fpt:%3u", frames_passed_through);
     }
     else
         std::fill_n(outBufs[0], nframes, 0);
@@ -168,13 +168,13 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
     }
 
     if (frame_loud)
-        printf("  l\n");
+        my_printf("  l\n");
     else if (how_loud() > passthrough_delta_threshold)
-        printf("  m\n");
+        my_printf("  m\n");
     else if (how_loud_short() > passthrough_delta_threshold)
-        printf("  s\n");
+        my_printf("  s\n");
     else
-        printf("\r");
+        my_printf("\r");
     fflush(stdout);
     return 0;
 }
@@ -200,13 +200,13 @@ void GateRecorder::update_ebu()
                        loudness_range_high);
 
     // loud is short:-48.56 noise -68
-    printf("m:%5.2f  ", loudness_momentary);
-    printf("s:%5.2f  ", loudness_short);
-    printf("i:%5.2f  ", loudness_intergrated);
-    printf("l:%5.2f  ", loudness_range_low);
-    printf("h:%5.2f  ", loudness_range_high);
-    printf("l-m:%5.2f  ", how_loud());
-    printf("l-s:%5.2f  ", how_loud_short());
+    my_printf("m:%5.2f  ", loudness_momentary);
+    my_printf("s:%5.2f  ", loudness_short);
+    my_printf("i:%5.2f  ", loudness_intergrated);
+    my_printf("l:%5.2f  ", loudness_range_low);
+    my_printf("h:%5.2f  ", loudness_range_high);
+    my_printf("l-m:%5.2f  ", how_loud());
+    my_printf("l-s:%5.2f  ", how_loud_short());
 }
 
 float GateRecorder::how_loud()
