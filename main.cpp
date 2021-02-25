@@ -5,11 +5,14 @@
 
 using namespace kfr;
 
+bool quiet;
+
 int main(int argc, const char ** argv)
 {
     cxxopts::Options options("gate_recorder", "Record loud audio frames");
     options.add_options()
-        ("l,loudness", "Loudness threshold", cxxopts::value<float>()->default_value("18"))
+        ("l,loudness", "Loudness threshold delta for recording", cxxopts::value<float>()->default_value("18"))
+        ("p,passthrough", "Loudness threshold delta for passthrough", cxxopts::value<float>()->default_value("13"))
         ("c,cutoff", "Highpass cutoff freq", cxxopts::value<float>()->default_value("0"))
         ("r,rolloff", "Highpass rolloff value", cxxopts::value<float>()->default_value("8"))
         ("o,odir", "Output directory", cxxopts::value<std::string>()->default_value("."))
@@ -18,9 +21,11 @@ int main(int argc, const char ** argv)
 
     auto o = options.parse(argc, argv);
 
+    quiet = o["q"].as<bool>();
     chdir(o["o"].as<std::string>().c_str());
     GateRecorder gr(
                 o["l"].as<float>(),
+                o["p"].as<float>(),
                 o["c"].as<float>(),
                 o["r"].as<float>());
 

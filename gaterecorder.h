@@ -15,14 +15,17 @@ public:
     static constexpr size_t fftsize = 1024;
     static constexpr size_t chunk_size = 128;
 
-    GateRecorder(float loudness, float cutoff_, float rolloff_);
+    GateRecorder(float loudness,
+                 float loudness_p,
+                 float cutoff_,
+                 float rolloff_);
 
     virtual int audioCallback(jack_nframes_t nframes, audioBufVector inBufs,
         audioBufVector outBufs);
 
     size_t frames_in_seconds(size_t seconds) const;
 private:
-    float loudness_threshold, cutoff, rolloff;
+    float loudness_delta_threshold, cutoff, rolloff;
     buffer_type frames_buffer;
     kfr::audio_format af;
 
@@ -30,7 +33,6 @@ private:
     size_t frames_past_loud = 0, max_frames_wait;
     size_t frames_begin, frames_end;
     size_t buffer_limit_soft, buffer_limit_hard;
-    buffer_type frames_passthrough;
     bool recording = false, passthrough = false;
 
     buffer_type bflush(size_t tail_return = 0);
@@ -38,6 +40,17 @@ private:
     kfr::zpk<kfr::fbase> filt;
     std::vector<kfr::biquad_params<kfr::fbase>> bqs;
 
+    float passthrough_delta_threshold;
+    buffer_type frames_passthrough;
+    unsigned frames_passed_through;
+    ftype loudness_momentary, loudness_short,
+            loudness_intergrated, loudness_range_low,
+            loudness_range_high;
+    kfr::univector<ftype> ebuffer;
+    kfr::ebu_r128<ftype> ebur128;
+    void update_ebu();
+    float how_loud();
+    float how_loud_short();
 };
 
 #endif // GATERECORDER_H
