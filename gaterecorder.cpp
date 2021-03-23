@@ -1,5 +1,6 @@
 #include "gaterecorder.h"
 
+#include <cstdarg>
 #include <thread>
 #include <map>
 
