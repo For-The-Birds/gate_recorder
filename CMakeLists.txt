@@ -3,7 +3,7 @@
 #
 # KFR is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
+# the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
 #
 # KFR is distributed in the hope that it will be useful,
@@ -327,4 +327,12 @@ if (NOT TARGET uninstall)
         uninstall
         COMMAND ${CMAKE_COMMAND} -P
                 ${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake)
+endif ()
+
+if (DEBUG_CMAKE)
+    get_cmake_property(_variableNames VARIABLES)
+    list(SORT _variableNames)
+    foreach (_variableName ${_variableNames})
+        message(STATUS "${_variableName}=${${_variableName}}")
+    endforeach ()
 endif ()

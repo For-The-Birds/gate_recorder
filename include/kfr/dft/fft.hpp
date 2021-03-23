@@ -7,7 +7,7 @@
 
   KFR is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
+  the Free Software Foundation, either version 2 of the License, or
   (at your option) any later version.
 
   KFR is distributed in the hope that it will be useful,
@@ -291,8 +291,13 @@ protected:
             }
             else
             {
-                stages[depth]->execute(cbool<inverse>, select_out(depth, out, scratch),
-                                       select_in(depth, out, in, scratch, in_scratch), temp);
+                size_t offset   = 0;
+                while (offset < this->size)
+                {
+                    stages[depth]->execute(cbool<inverse>, select_out(depth, out, scratch) + offset,
+                                       select_in(depth, out, in, scratch, in_scratch) + offset, temp);
+                    offset += stages[depth]->stage_size;
+                }
                 depth++;
             }
         }

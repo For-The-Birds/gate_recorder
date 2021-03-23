@@ -7,7 +7,7 @@
 
   KFR is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
+  the Free Software Foundation, either version 2 of the License, or
   (at your option) any later version.
 
   KFR is distributed in the hope that it will be useful,
@@ -42,12 +42,13 @@ inline namespace CMT_ARCH_NAME
 namespace intrinsics
 {
 
-constexpr bool fft_reorder_aligned = false;
+constexpr inline static bool fft_reorder_aligned = false;
+
+constexpr inline static size_t bitrev_table_log2N = ilog2(arraysize(data::bitrev_table));
 
 template <size_t Bits>
 CMT_GNU_CONSTEXPR inline u32 bitrev_using_table(u32 x)
 {
-    constexpr size_t bitrev_table_log2N = ilog2(arraysize(data::bitrev_table));
     if (Bits > bitrev_table_log2N)
         return bitreverse<Bits>(x);
 
@@ -56,7 +57,6 @@ CMT_GNU_CONSTEXPR inline u32 bitrev_using_table(u32 x)
 
 CMT_GNU_CONSTEXPR inline u32 bitrev_using_table(u32 x, size_t bits)
 {
-    constexpr size_t bitrev_table_log2N = ilog2(arraysize(data::bitrev_table));
     if (bits > bitrev_table_log2N)
         return bitreverse<32>(x) >> (32 - bits);
 
@@ -65,7 +65,6 @@ CMT_GNU_CONSTEXPR inline u32 bitrev_using_table(u32 x, size_t bits)
 
 CMT_GNU_CONSTEXPR inline u32 dig4rev_using_table(u32 x, size_t bits)
 {
-    constexpr size_t bitrev_table_log2N = ilog2(arraysize(data::bitrev_table));
     if (bits > bitrev_table_log2N)
         return digitreverse4<32>(x) >> (32 - bits);
 
