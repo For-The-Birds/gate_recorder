@@ -208,32 +208,6 @@ void GateRecorder::update_ebu()
     my_printf("i:%5.2f  ", loudness_intergrated);
     my_printf("l:%5.2f  ", loudness_range_low);
     my_printf("h:%5.2f  ", loudness_range_high);
-    my_printf("M:%5.2f  ", how_loud());
-    my_printf("S:%5.2f  ", how_loud_short());
-}
-
-float GateRecorder::how_loud()
-{
-    if (!ebu_valid())
-        return -std::numeric_limits<ftype>::infinity();
-    return loudness_momentary - loudness_range_low;
-    /* -current - -noisefloor */
-}
-
-float GateRecorder::how_loud_short()
-{
-    if (!ebu_valid())
-        return -std::numeric_limits<ftype>::infinity();
-    return loudness_short - loudness_range_low;
-    /* -current - -noisefloor */
-}
-
-bool GateRecorder::ebu_valid()
-{
-    return loudness_momentary > -std::numeric_limits<ftype>::infinity() &&
-           loudness_short > -std::numeric_limits<ftype>::infinity() &&
-           loudness_intergrated > -std::numeric_limits<ftype>::infinity();
-
 }
 
 GateRecorder::buffer_type GateRecorder::bflush(size_t tail_return)
