@@ -7,7 +7,7 @@
 
   KFR is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
+  the Free Software Foundation, either version 2 of the License, or
   (at your option) any later version.
 
   KFR is distributed in the hope that it will be useful,
@@ -79,7 +79,7 @@ template <typename T, size_t N>
 KFR_INTRINSIC vec<T, N> carg(const vec<complex<T>, N>& x)
 {
     const vec<T, N* 2> xx = cdecom(x);
-    return atan2(even(xx), odd(xx));
+    return atan2(odd(xx), even(xx));
 }
 
 template <typename T, size_t N>

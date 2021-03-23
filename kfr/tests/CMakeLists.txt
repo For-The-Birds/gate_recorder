@@ -3,7 +3,7 @@
 #
 # KFR is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
+# the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
 #
 # KFR is distributed in the hope that it will be useful,
@@ -109,6 +109,8 @@ set(ALL_TESTS_CPP
 
 if (ENABLE_DFT)
     list(APPEND ALL_TESTS_CPP dft_test.cpp)
+
+    add_executable(dft_test dft_test.cpp)
 endif ()
 
 find_package(MPFR)
@@ -136,8 +138,13 @@ target_compile_definitions(all_tests PRIVATE KFR_NO_MAIN)
 target_link_libraries(all_tests kfr use_arch)
 if (ENABLE_DFT)
     target_link_libraries(all_tests kfr_dft)
+    target_link_libraries(dft_test kfr_dft)
 endif ()
 target_link_libraries(all_tests kfr_io)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(all_tests PRIVATE /Zc:lambda)
+endif ()
 
 function (add_x86_test ARCH)
     set(NAME ${ARCH})
