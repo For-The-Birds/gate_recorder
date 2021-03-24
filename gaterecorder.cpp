@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <thread>
 #include <map>
+#include <cmath>
 
 extern bool quiet;
 
@@ -40,7 +41,7 @@ void audio_dumper(GateRecorder::buffer_type buf, kfr::audio_format af)
 }
 
 GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
-                           float rolloff_)
+                           float rolloff_, float before_, float after_, float wait_)
     : JackCpp::AudioIO("gate_recorder", 2, 2)
     , loudness_threshold(loudness)
     , passthrough_delta_threshold(loudness_p)
@@ -55,9 +56,9 @@ GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
     af.samplerate = getSampleRate();
     af.channels = 1;
 
-    max_frames_wait = frames_in_seconds(10);
-    frames_begin = frames_in_seconds(1);
-    frames_end = frames_in_seconds(1);
+    max_frames_wait = frames_in_seconds(wait_);
+    frames_begin = frames_in_seconds(before_);
+    frames_end = frames_in_seconds(after_);
     buffer_limit_soft = frames_in_seconds(60*1);
     buffer_limit_hard = frames_in_seconds(60*3);
 
@@ -183,9 +184,9 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
     return 0;
 }
 
-size_t GateRecorder::frames_in_seconds(size_t seconds) const
+size_t GateRecorder::frames_in_seconds(float seconds) const
 {
-    return getSampleRate()*seconds/getBufferSize();
+    return std::ceil(getSampleRate()*seconds/getBufferSize());
 }
 
 void GateRecorder::update_ebu()

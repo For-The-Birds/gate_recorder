@@ -15,6 +15,9 @@ int main(int argc, const char ** argv)
     options.add_options()
         ("l,loudness", "Loudness threshold for recording", cxxopts::value<float>()->default_value("18"))
         ("p,passthrough", "Loudness threshold for passthrough", cxxopts::value<float>()->default_value("13"))
+        ("b,before", "Keep this amount of seconds before the event", cxxopts::value<float>()->default_value("0.2"))
+        ("a,after", "Keep this amount of seconds after the event", cxxopts::value<float>()->default_value("1"))
+        ("w,wait", "Release time in seconds", cxxopts::value<float>()->default_value("10"))
         ("c,cutoff", "Highpass cutoff freq", cxxopts::value<float>()->default_value("0"))
         ("r,rolloff", "Highpass rolloff value", cxxopts::value<float>()->default_value("8"))
         ("o,odir", "Output directory", cxxopts::value<std::string>()->default_value("."))
@@ -30,7 +33,10 @@ int main(int argc, const char ** argv)
                     o["l"].as<float>(),
                     o["p"].as<float>(),
                     o["c"].as<float>(),
-                    o["r"].as<float>());
+                    o["r"].as<float>(),
+                    o["b"].as<float>(),
+                    o["a"].as<float>(),
+                    o["w"].as<float>());
         while(1)
             sleep(100500);
 

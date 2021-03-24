@@ -18,12 +18,15 @@ public:
     GateRecorder(float loudness,
                  float loudness_p,
                  float cutoff_,
-                 float rolloff_);
+                 float rolloff_,
+                 float before_,
+                 float after_,
+                 float wait_);
 
     virtual int audioCallback(jack_nframes_t nframes, audioBufVector inBufs,
         audioBufVector outBufs) noexcept;
 
-    size_t frames_in_seconds(size_t seconds) const;
+    size_t frames_in_seconds(float seconds) const;
 private:
     float loudness_threshold, cutoff, rolloff;
     buffer_type frames_buffer;
