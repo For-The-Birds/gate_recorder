@@ -13,8 +13,8 @@ int main(int argc, const char ** argv)
                              "Records loud audio frames, "
                              "like gate but keeps some pre-buffer ans post-buffer");
     options.add_options()
-        ("l,loudness", "Loudness threshold for recording", cxxopts::value<float>()->default_value("18"))
-        ("p,passthrough", "Loudness threshold for passthrough", cxxopts::value<float>()->default_value("13"))
+        ("l,loudness", "Loudness threshold for recording", cxxopts::value<float>()->default_value("-40"))
+        ("p,passthrough", "Loudness threshold for passthrough", cxxopts::value<float>()->default_value("-50"))
         ("b,before", "Keep this amount of seconds before the event", cxxopts::value<float>()->default_value("0.2"))
         ("a,after", "Keep this amount of seconds after the event", cxxopts::value<float>()->default_value("1"))
         ("w,wait", "Release time in seconds", cxxopts::value<float>()->default_value("10"))
