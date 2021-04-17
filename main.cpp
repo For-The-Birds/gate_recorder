@@ -17,11 +17,12 @@ int main(int argc, const char ** argv)
         ("p,passthrough", "Loudness threshold for passthrough", cxxopts::value<float>()->default_value("-50"))
         ("b,before", "Keep this amount of seconds before the event", cxxopts::value<float>()->default_value("0.2"))
         ("a,after", "Keep this amount of seconds after the event", cxxopts::value<float>()->default_value("1"))
-        ("w,wait", "Release time in seconds", cxxopts::value<float>()->default_value("10"))
+        ("w,wait", "Time to wait for next loud event to be stored in same file. Release time in seconds.", cxxopts::value<float>()->default_value("10"))
+        ("e,event", "Minimum loud event time in seconds to start recording", cxxopts::value<float>()->default_value("0.1"))
         ("c,cutoff", "Highpass cutoff freq", cxxopts::value<float>()->default_value("0"))
         ("r,rolloff", "Highpass rolloff value", cxxopts::value<float>()->default_value("8"))
         ("o,odir", "Output directory", cxxopts::value<std::string>()->default_value("."))
-        ("q,quiet", "No output", cxxopts::value<bool>()->default_value("false"))
+        ("q,quiet", "No output to stdout", cxxopts::value<bool>()->default_value("false"))
         ;
 
     try {
@@ -36,7 +37,8 @@ int main(int argc, const char ** argv)
                     o["r"].as<float>(),
                     o["b"].as<float>(),
                     o["a"].as<float>(),
-                    o["w"].as<float>());
+                    o["w"].as<float>(),
+                    o["e"].as<float>());
         while(1)
             sleep(100500);
 

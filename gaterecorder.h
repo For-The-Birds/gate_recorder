@@ -21,7 +21,8 @@ public:
                  float rolloff_,
                  float before_,
                  float after_,
-                 float wait_);
+                 float wait_,
+                 float event_);
 
     virtual int audioCallback(jack_nframes_t nframes, audioBufVector inBufs,
         audioBufVector outBufs) noexcept;
@@ -36,6 +37,7 @@ private:
     size_t frames_past_loud = 0, max_frames_wait;
     size_t frames_begin, frames_end;
     size_t buffer_limit_soft, buffer_limit_hard;
+    size_t consecutive_loud_frames = 0, consecutive_loud_frames_limit;
     bool recording = false, passthrough = false;
 
     buffer_type bflush(size_t tail_return = 0);
@@ -52,6 +54,9 @@ private:
     kfr::univector<ftype> ebuffer;
     kfr::ebu_r128<ftype> ebur128;
     void update_ebu();
+
+    std::time_t event_time;
+    std::string get_filename();
 };
 
 #endif // GATERECORDER_H
