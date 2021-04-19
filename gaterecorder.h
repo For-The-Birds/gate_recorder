@@ -27,17 +27,17 @@ public:
     virtual int audioCallback(jack_nframes_t nframes, audioBufVector inBufs,
         audioBufVector outBufs) noexcept;
 
-    size_t frames_in_seconds(float seconds) const;
+    size_t buffers_in_seconds(float seconds) const;
 private:
     float loudness_threshold, cutoff, rolloff;
-    buffer_type frames_buffer;
+    buffer_type buffers_buffer;
     kfr::audio_format af;
 
     size_t chunks;
-    size_t frames_past_loud = 0, max_frames_wait;
-    size_t frames_begin, frames_end;
+    size_t buffers_past_loud = 0, max_buffers_wait;
+    size_t buffers_begin, buffers_end;
     size_t buffer_limit_soft, buffer_limit_hard;
-    size_t consecutive_loud_frames = 0, consecutive_loud_frames_limit;
+    size_t consecutive_loud_frames = 0, consecutive_loud_buffers_limit;
     bool recording = false, passthrough = false;
 
     buffer_type bflush(size_t tail_return = 0);
@@ -46,8 +46,8 @@ private:
     std::vector<kfr::biquad_params<kfr::fbase>> bqs;
 
     float passthrough_delta_threshold;
-    buffer_type frames_passthrough;
-    unsigned frames_passed_through;
+    buffer_type buffers_passthrough;
+    unsigned buffers_passed_through;
     ftype loudness_momentary, loudness_short,
             loudness_intergrated, loudness_range_low,
             loudness_range_high;

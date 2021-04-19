@@ -54,18 +54,18 @@ GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
     af.samplerate = getSampleRate();
     af.channels = 1;
 
-    max_frames_wait = frames_in_seconds(wait_);
-    frames_begin = frames_in_seconds(before_);
-    frames_end = frames_in_seconds(after_);
-    buffer_limit_soft = frames_in_seconds(60*1);
-    buffer_limit_hard = frames_in_seconds(60*3);
-    consecutive_loud_frames_limit = frames_in_seconds(event_);
+    max_buffers_wait = buffers_in_seconds(wait_);
+    buffers_begin = buffers_in_seconds(before_);
+    buffers_end = buffers_in_seconds(after_);
+    buffer_limit_soft = buffers_in_seconds(60*1);
+    buffer_limit_hard = buffers_in_seconds(60*3);
+    consecutive_loud_buffers_limit = buffers_in_seconds(event_);
 
 
-    my_printf("loudness_threshold: %.2f, consecutive_loud_frames_limit %d, sr %d, bs %d, 1sec %d\n",
+    my_printf("loudness_threshold: %.2f, consecutive_loud_buffers_limit %d, sr %d, bs %d, 1sec %d\n",
                 loudness_threshold,
-                consecutive_loud_frames_limit,
-                getSampleRate(), getBufferSize(), frames_in_seconds(1));
+                consecutive_loud_buffers_limit,
+                getSampleRate(), getBufferSize(), buffers_in_seconds(1));
 
     if (rolloff > 0 && cutoff > 0)
     {
@@ -81,31 +81,31 @@ GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
 
 int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioBufVector inBufs, JackCpp::AudioIO::audioBufVector outBufs) noexcept
 {
-    frames_buffer.emplace_back(kfr::make_univector(inBufs[0], nframes));
+    buffers_buffer.emplace_back(kfr::make_univector(inBufs[0], nframes));
 
     if (rolloff > 0 && cutoff > 0)
     {
-        kfr::univector<float> filtered = kfr::biquad<32>(bqs, frames_buffer.back());
+        kfr::univector<float> filtered = kfr::biquad<32>(bqs, buffers_buffer.back());
         float * p = &outBufs[0][0];
         for (auto & v : filtered)
             *p++ = v;
-        frames_buffer.back() = filtered;
+        buffers_buffer.back() = filtered;
     }
 
     update_ebu();
 
     if (passthrough)
-        frames_passthrough.emplace_back(frames_buffer.back());
+        buffers_passthrough.emplace_back(buffers_buffer.back());
 
     bool frame_loud = loudness_momentary > loudness_threshold;
     if (frame_loud)
     {
         ++consecutive_loud_frames;
-        frames_past_loud = 0;
-        if (!recording && consecutive_loud_frames >= consecutive_loud_frames_limit)
+        buffers_past_loud = 0;
+        if (!recording && consecutive_loud_frames >= consecutive_loud_buffers_limit)
         {
-            while(frames_buffer.size() > frames_begin)
-                frames_buffer.pop_front();
+            while(buffers_buffer.size() > buffers_begin)
+                buffers_buffer.pop_front();
             recording = true;
             event_time = std::time(nullptr);
         }
@@ -113,71 +113,71 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
     else
         consecutive_loud_frames = 0;
 
-    ++frames_past_loud;
+    ++buffers_past_loud;
 
     if (!passthrough)
     {
         passthrough = loudness_short > passthrough_delta_threshold;
-        frames_passed_through = 0;
+        buffers_passed_through = 0;
     }
     if (passthrough)
     {
-        if (frames_passthrough.size() == 0)
-            frames_passthrough = buffer_type(
-                        frames_buffer.end()-std::min(frames_buffer.size(), frames_begin),
-                        frames_buffer.end());
+        if (buffers_passthrough.size() == 0)
+            buffers_passthrough = buffer_type(
+                        buffers_buffer.end()-std::min(buffers_buffer.size(), buffers_begin),
+                        buffers_buffer.end());
 
-        if (frames_passed_through > frames_end)
+        if (buffers_passed_through > buffers_end)
         {
             passthrough = false;
             ebur128.reset();
         }
     }
 
-    if (frames_past_loud == max_frames_wait && recording)
+    if (buffers_past_loud == max_buffers_wait && recording)
     {
         // Too long silence. Normal end of recording.
-        frames_buffer = bflush(max_frames_wait - frames_end);
+        buffers_buffer = bflush(max_buffers_wait - buffers_end);
         recording = false;
         ebur128.reset();
     }
 
-    if (frames_past_loud < max_frames_wait && recording)
+    if (buffers_past_loud < max_buffers_wait && recording)
     {
         // Normal recording state. Check file length limits.
-        if (frames_buffer.size() > buffer_limit_soft)
+        if (buffers_buffer.size() > buffer_limit_soft)
         {
-            if (frames_buffer.size() > buffer_limit_hard)
+            if (buffers_buffer.size() > buffer_limit_hard)
             {
                 my_printf("hard hit\n");
                 bflush();
             }
-            else if(frames_past_loud > max_frames_wait/3)
+            else if(buffers_past_loud > max_buffers_wait/3)
             {
                 my_printf("soft hit\n");
-                frames_buffer = bflush(max_frames_wait/3 - frames_end);
+                buffers_buffer = bflush(max_buffers_wait/3 - buffers_end);
             }
         }
     }
 
-    my_printf("  fp:%3lu", frames_passthrough.size());
-    if (frames_passthrough.size() > 0)
+    my_printf("  fp:%3lu", buffers_passthrough.size());
+    if (buffers_passthrough.size() > 0)
     {
-        std::copy_n(frames_passthrough.front().begin(), nframes, outBufs[0]);
-        frames_passthrough.pop_front();
-        ++frames_passed_through;
-        my_printf(" fpt:%3u", frames_passed_through);
+        std::copy_n(buffers_passthrough.front().begin(), nframes, outBufs[0]);
+        buffers_passthrough.pop_front();
+        ++buffers_passed_through;
+        my_printf(" fpt:%3u", buffers_passed_through);
     }
     else
         std::fill_n(outBufs[0], nframes, 0);
 
-    if (frames_past_loud > max_frames_wait)
+    if (buffers_past_loud > max_buffers_wait)
     {
         // Too long after last loud frame. This means that we are not recording
-        // and do not need to pile up frames_buffer
-        frames_buffer.pop_front();
+        // and do not need to pile up buffers_buffer
+        buffers_buffer.pop_front();
 
-        frames_past_loud = max_frames_wait+1; // avoid overflow
+        buffers_past_loud = max_buffers_wait+1; // avoid overflow
     }
 
     if (frame_loud)
@@ -192,14 +192,14 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
     return 0;
 }
 
-size_t GateRecorder::frames_in_seconds(float seconds) const
+size_t GateRecorder::buffers_in_seconds(float seconds) const
 {
     return std::ceil(getSampleRate()*seconds/getBufferSize());
 }
 
 void GateRecorder::update_ebu()
 {
-    ebuffer.insert(ebuffer.end(), frames_buffer.back().begin(), frames_buffer.back().end());
+    ebuffer.insert(ebuffer.end(), buffers_buffer.back().begin(), buffers_buffer.back().end());
 
     while (ebuffer.size() > ebur128.packet_size())
     {
@@ -225,12 +225,12 @@ GateRecorder::buffer_type GateRecorder::bflush(size_t tail_return)
     buffer_type tailb;
     while(tail_return--)
     {
-        tailb.emplace_front(frames_buffer.back());
-        frames_buffer.pop_back();
+        tailb.emplace_front(buffers_buffer.back());
+        buffers_buffer.pop_back();
     }
 
-    std::thread t(audio_dumper, std::move(frames_buffer), af, get_filename());
+    std::thread t(audio_dumper, std::move(buffers_buffer), af, get_filename());
     t.detach();
-    frames_past_loud = 0;
+    buffers_past_loud = 0;
     return tailb;
 }
