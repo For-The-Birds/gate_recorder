@@ -17,6 +17,7 @@ target_include_directories(jackcpp PUBLIC
     )
 
 add_subdirectory(kfr)
+add_subdirectory(plog)
 
 set(CXXOPTS_BUILD_EXAMPLES OFF)
 set(CXXOPTS_BUILD_TESTS OFF)
@@ -25,4 +26,9 @@ add_subdirectory(cxxopts)
 
 add_executable(gate_recorder main.cpp gaterecorder.cpp)
 
-target_link_libraries(gate_recorder kfr kfr_dft kfr_io jackcpp jack tcmalloc cxxopts)
+target_link_libraries(gate_recorder kfr kfr_dft kfr_io jackcpp jack tcmalloc cxxopts plog)
+
+install(
+    TARGETS gate_recorder
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

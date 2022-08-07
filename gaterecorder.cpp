@@ -5,6 +5,8 @@
 #include <map>
 #include <cmath>
 
+#include <plog/Log.h>
+
 extern bool quiet;
 
 void my_printf ( const char * format, ... )
@@ -27,7 +29,7 @@ std::string GateRecorder::get_filename()
 void audio_dumper(GateRecorder::buffer_type buf, kfr::audio_format af, std::string filename)
 {
     size_t sec = buf.size() * buf.front().size() / af.samplerate;
-    my_printf("\nAW %lu sec '%s'\n", sec, filename.c_str());
+    LOGI.printf("AW %lu sec '%s'", sec, filename.c_str());
     fflush(stdout);
     kfr::audio_writer_wav<float> aw(
                  kfr::open_file_for_writing(filename),
@@ -49,7 +51,7 @@ GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
     , ebur128(getSampleRate(), {kfr::Speaker::Mono}, 3)
 {
     //chunks = getBufferSize()/chunk_size;
-    my_printf("%s\n", kfr::library_version());
+    LOGI << kfr::library_version();
 
     af.samplerate = getSampleRate();
     af.channels = 1;
@@ -62,14 +64,14 @@ GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
     consecutive_loud_buffers_limit = buffers_in_seconds(event_);
 
 
-    my_printf("loudness_threshold: %.2f, consecutive_loud_buffers_limit %d, sr %d, bs %d, 1sec %d\n",
+    LOGI.printf("loudness_threshold: %.2f, consecutive_loud_buffers_limit %d, sr %d, bs %d, 1sec %d",
                 loudness_threshold,
                 consecutive_loud_buffers_limit,
                 getSampleRate(), getBufferSize(), buffers_in_seconds(1));
 
     if (rolloff > 0 && cutoff > 0)
     {
-        my_printf("Using highpass filter cutoff %2.f, rolloff %.2f\n", cutoff, rolloff);
+        LOGI.printf("Using highpass filter cutoff %2.f, rolloff %.2f", cutoff, rolloff);
         filt = kfr::iir_highpass(kfr::bessel<kfr::fbase>(rolloff), cutoff, getSampleRate());
         bqs = kfr::to_sos(filt);
     }
@@ -186,6 +188,8 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
         my_printf("  momentary > passthrough\n");
     else if (loudness_short > passthrough_delta_threshold)
         my_printf("  short > passthrough\n");
+    else if (consecutive_loud_frames > 0)
+        my_printf("  clf:%d", consecutive_loud_frames);
     else
         my_printf("\r");
     fflush(stdout);

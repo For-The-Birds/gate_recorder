@@ -1,7 +1,13 @@
 #include <stdlib.h>
 
 #include "gaterecorder.h"
+
 #include <cxxopts.hpp>
+
+#include <plog/Log.h>
+#include <plog/Init.h>
+#include <plog/Formatters/TxtFormatter.h>
+#include <plog/Appenders/ColorConsoleAppender.h>
 
 using namespace kfr;
 
@@ -9,9 +15,12 @@ bool quiet;
 
 int main(int argc, const char ** argv)
 {
+    static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+    plog::init(plog::verbose, &consoleAppender);
+
     cxxopts::Options options("gate_recorder",
-                             "Records loud audio frames, "
-                             "like gate but keeps some pre-buffer ans post-buffer");
+                             "Records and/or passes through loud audio frames, "
+                             "like gate, but keeps some pre-buffer ans post-buffer");
     options.add_options()
         ("l,loudness", "Loudness threshold for recording", cxxopts::value<float>()->default_value("-40"))
         ("p,passthrough", "Loudness threshold for passthrough", cxxopts::value<float>()->default_value("-50"))
@@ -22,14 +31,23 @@ int main(int argc, const char ** argv)
         ("c,cutoff", "Highpass cutoff freq", cxxopts::value<float>()->default_value("0"))
         ("r,rolloff", "Highpass rolloff value", cxxopts::value<float>()->default_value("8"))
         ("o,odir", "Output directory", cxxopts::value<std::string>()->default_value("."))
-        ("q,quiet", "No output to stdout", cxxopts::value<bool>()->default_value("false"))
+        ("d,debug", "Log level", cxxopts::value<int>()->default_value("4"))
+        ("q,quiet", "Do not print lodness statistics", cxxopts::value<bool>()->default_value("false"))
         ;
 
     try {
         auto o = options.parse(argc, argv);
 
         quiet = o["q"].as<bool>();
-        chdir(o["o"].as<std::string>().c_str());
+
+        plog::get()->setMaxSeverity(static_cast<plog::Severity>(o["d"].as<int>()));
+
+        auto ret = chdir(o["o"].as<std::string>().c_str());
+        if (ret == -1) {
+            LOGE << "cant chdir " << strerror(errno);
+            return -3;
+        }
+
         GateRecorder gr(
                     o["l"].as<float>(),
                     o["p"].as<float>(),
@@ -45,17 +63,17 @@ int main(int argc, const char ** argv)
     }
     catch (cxxopts::OptionException & e)
     {
-        std::cout << e.what() << "\n\n" << options.help();
+        LOGE << e.what() << "\n\n" << options.help();
         return 0;
     }
     catch (std::exception & e)
     {
-        std::cout << e.what();
+        LOGE << e.what();
         return -1;
     }
     catch(...)
     {
-        std::cout << "unknown exception";
+        LOGE << "unknown exception";
         return -2;
     }
 
