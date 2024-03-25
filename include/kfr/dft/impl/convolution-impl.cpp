@@ -2,7 +2,7 @@
  *  @{
  */
 /*
-  Copyright (C) 2016 D Levin (https://www.kfrlib.com)
+  Copyright (C) 2016-2022 Fractalium Ltd (https://www.kfrlib.com)
   This file is part of KFR
 
   KFR is free software: you can redistribute it and/or modify
@@ -85,9 +85,9 @@ univector<T> autocorrelate(const univector_ref<const T>& src1)
 template <typename T>
 convolve_filter<T>::convolve_filter(size_t size_, size_t block_size_)
     : data_size(size_), block_size(next_poweroftwo(block_size_)), fft(2 * block_size), temp(fft.temp_size),
-      segments((data_size + block_size - 1) / block_size), ir_segments(segments.size()), input_position(0),
-      saved_input(block_size), premul(fft.csize()), cscratch(fft.csize()), scratch1(fft.size),
-      scratch2(fft.size), overlap(block_size), position(0)
+      segments((data_size + block_size - 1) / block_size), position(0), ir_segments(segments.size()),
+      saved_input(block_size), input_position(0), premul(fft.csize()), cscratch(fft.csize()),
+      scratch1(fft.size), scratch2(fft.size), overlap(block_size)
 {
 }
 

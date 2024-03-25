@@ -2,7 +2,7 @@
  *  @{
  */
 /*
-  Copyright (C) 2016 D Levin (https://www.kfrlib.com)
+  Copyright (C) 2016-2022 Fractalium Ltd (https://www.kfrlib.com)
   This file is part of KFR
 
   KFR is free software: you can redistribute it and/or modify
@@ -362,13 +362,13 @@ KFR_INTRINSIC void cscatter(complex<T>* base, size_t stride, const cvec<T, N>& v
 template <size_t groupsize = 1, typename T, size_t N, typename IT>
 KFR_INTRINSIC vec<T, N * 2 * groupsize> cgather(const complex<T>* base, const vec<IT, N>& offset)
 {
-    return gather_helper<2 * groupsize>(ptr_cast<T>(base), offset, csizeseq_t<N>());
+    return internal::gather_helper<2 * groupsize>(ptr_cast<T>(base), offset, csizeseq_t<N>());
 }
 
 template <size_t groupsize = 1, typename T, size_t N, typename IT>
 KFR_INTRINSIC void cscatter(complex<T>* base, const vec<IT, N>& offset, vec<T, N * 2 * groupsize> value)
 {
-    return scatter_helper<2 * groupsize>(ptr_cast<T>(base), offset, value, csizeseq_t<N>());
+    return internal::scatter_helper<2 * groupsize>(ptr_cast<T>(base), offset, value, csizeseq_t<N>());
 }
 
 template <typename T>
@@ -1089,14 +1089,23 @@ KFR_INTRINSIC void butterfly6(cvec<T, N>& a0, cvec<T, N>& a1, cvec<T, N>& a2, cv
 }
 
 template <typename T, bool inverse = false>
-const static cvec<T, 1> tw9_1 = { T(0.76604444311897803520239265055541),
+static constexpr KFR_INTRINSIC cvec<T, 1> tw9_1()
+{
+    return { T(0.76604444311897803520239265055541),
                                   (inverse ? -1 : 1) * T(-0.64278760968653932632264340990727) };
+}
 template <typename T, bool inverse = false>
-const static cvec<T, 1> tw9_2 = { T(0.17364817766693034885171662676931),
+static constexpr KFR_INTRINSIC cvec<T, 1> tw9_2()
+{
+    return { T(0.17364817766693034885171662676931),
                                   (inverse ? -1 : 1) * T(-0.98480775301220805936674302458952) };
+}
 template <typename T, bool inverse = false>
-const static cvec<T, 1> tw9_4 = { T(-0.93969262078590838405410927732473),
+static constexpr KFR_INTRINSIC cvec<T, 1> tw9_4()
+{
+    return { T(-0.93969262078590838405410927732473),
                                   (inverse ? -1 : 1) * T(-0.34202014332566873304409961468226) };
+}
 
 template <size_t N, bool inverse = false, typename T>
 KFR_INTRINSIC void butterfly9(const cvec<T, N>& a0, const cvec<T, N>& a1, const cvec<T, N>& a2,
@@ -1114,10 +1123,10 @@ KFR_INTRINSIC void butterfly9(const cvec<T, N>& a0, const cvec<T, N>& a1, const 
     split(a345, t3, t4, t5);
     split(a678, t6, t7, t8);
 
-    t4 = cmul(t4, tw9_1<T, inverse>);
-    t5 = cmul(t5, tw9_2<T, inverse>);
-    t7 = cmul(t7, tw9_2<T, inverse>);
-    t8 = cmul(t8, tw9_4<T, inverse>);
+    t4 = cmul(t4, tw9_1<T, inverse>());
+    t5 = cmul(t5, tw9_2<T, inverse>());
+    t7 = cmul(t7, tw9_2<T, inverse>());
+    t8 = cmul(t8, tw9_4<T, inverse>());
 
     cvec<T, N* 3> t036 = concat(t0, t3, t6);
     cvec<T, N* 3> t147 = concat(t1, t4, t7);
@@ -1800,3 +1809,4 @@ KFR_INTRINSIC void cdigitreverse4_write<false, f64, 32>(complex<f64>* dest, cons
 } // namespace kfr
 
 CMT_PRAGMA_MSVC(warning(pop))
+

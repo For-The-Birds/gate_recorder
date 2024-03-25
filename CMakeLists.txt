@@ -1,4 +1,4 @@
-# Copyright (C) 2016 D Levin (http://www.kfrlib.com)
+# Copyright (C) 2016-2022 Fractalium Ltd (http://www.kfrlib.com)
 # This file is part of KFR
 #
 # KFR is free software: you can redistribute it and/or modify
@@ -14,11 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with KFR.
 
-cmake_minimum_required(VERSION 3.1)
-
-set(CMAKE_CXX_FLAGS
-    " ${CMAKE_CXX_FLAGS}"
-    CACHE STRING "compile flags" FORCE)
+cmake_minimum_required(VERSION 3.10)
 
 project(kfr CXX)
 
@@ -32,33 +28,12 @@ if (WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
         CACHE STRING "Reset install prefix on Win32" FORCE)
 endif ()
 
-if (WIN32)
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif ()
-
-set(CMAKE_CXX_VISIBILITY_PRESET "default")
-set(CMAKE_C_VISIBILITY_PRESET "default")
-
-message(STATUS "Install prefix = ${CMAKE_INSTALL_PREFIX}")
-
-message(
-    STATUS
-        "C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} ${CMAKE_CXX_COMPILER} "
-)
-message(STATUS CMAKE_SYSTEM_PROCESSOR = ${CMAKE_SYSTEM_PROCESSOR})
-
+set(X86 FALSE)
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     set(X86 TRUE)
-else ()
-    set(X86 FALSE)
 endif ()
-
-if (X86)
-    message(STATUS X86)
-endif ()
-
-if (MSVC)
-    message(STATUS MSVC)
+if (CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+    set(X86 TRUE)
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL
@@ -90,6 +65,7 @@ option(REGENERATE_TESTS "Regenerate auto tests" OFF)
 option(DISABLE_CLANG_EXTENSIONS "Disable Clang vector extensions" OFF)
 option(KFR_EXTENDED_TESTS "Extended tests (up to hour)" OFF)
 option(SKIP_TESTS "Skip tests (only build)" OFF)
+option(KFR_STD_COMPLEX "Use std::complex instead of custom complex type" OFF)
 mark_as_advanced(ENABLE_ASMTEST)
 mark_as_advanced(REGENERATE_TESTS)
 mark_as_advanced(DISABLE_CLANG_EXTENSIONS)
@@ -145,6 +121,12 @@ else ()
     set(PTHREAD_LIB pthread)
 endif ()
 
+if (MSVC AND CLANG)
+    set(CLANG_ARG_PREFIX "SHELL:-Xclang ")
+else ()
+    set(CLANG_ARG_PREFIX "")
+endif ()
+
 # KFR library
 add_library(kfr INTERFACE)
 target_sources(kfr INTERFACE ${KFR_SRC})
@@ -154,10 +136,8 @@ if (APPLE)
     target_compile_options(kfr INTERFACE -faligned-allocation)
 endif ()
 if (NOT IOS)
-    if (CLANG)
-        target_compile_options(kfr INTERFACE -Xclang -mstackrealign)
-    elseif (NOT MSVC)
-        target_compile_options(kfr INTERFACE -mstackrealign)
+    if (NOT MSVC OR CLANG)
+        target_compile_options(kfr INTERFACE "${CLANG_ARG_PREFIX}-mstackrealign")
     endif ()
 endif ()
 if (MSVC)
@@ -168,11 +148,14 @@ endif ()
 if (DISABLE_CLANG_EXTENSIONS)
     target_compile_definitions(kfr INTERFACE -DCMT_DISABLE_CLANG_EXT)
 endif ()
+if (KFR_STD_COMPLEX)
+    target_compile_definitions(kfr INTERFACE -DKFR_STD_COMPLEX)
+endif()
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(kfr INTERFACE -Wno-ignored-qualifiers)
+    target_compile_options(kfr INTERFACE -Wno-ignored-qualifiers -Wno-psabi)
 endif ()
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    target_compile_options(kfr INTERFACE -Wno-c++1z-extensions)
+    target_compile_options(kfr INTERFACE -Wno-c++1z-extensions -Wno-psabi)
 endif ()
 
 if (NOT ENABLE_DFT)
@@ -201,11 +184,7 @@ endfunction ()
 
 if (ENABLE_DFT)
 
-    if (MSVC)
-        set(KFR_DFT_DEFS -fp:fast)
-    else ()
-        set(KFR_DFT_DEFS -ffast-math)
-    endif ()
+    set(KFR_DFT_DEFS "${CLANG_ARG_PREFIX}-ffp-contract=fast")
 
     if (ENABLE_DFT_MULTIARCH)
         add_library(kfr_dft INTERFACE)
@@ -284,7 +263,6 @@ if (ENABLE_DFT)
 endif ()
 append_defines_from(kfr_io)
 
-message(STATUS kfr_defines = "${kfr_defines}")
 string(REPLACE "=" " " kfr_defines "${kfr_defines}")
 string(REPLACE ";" "\n#define " kfr_defines "${kfr_defines}")
 set(kfr_defines "#define ${kfr_defines}\n")
