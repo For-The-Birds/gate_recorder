@@ -11,7 +11,7 @@
 #include "cident.h"
 
 #define KFR_VERSION_MAJOR 4
-#define KFR_VERSION_MINOR 2
+#define KFR_VERSION_MINOR 3
 #define KFR_VERSION_PATCH 0
 #define KFR_VERSION_LABEL ""
 
@@ -55,15 +55,15 @@
 namespace kfr
 {
 /// @brief KFR version string
-constexpr const char version_string[] = KFR_VERSION_STRING;
+constexpr inline const char version_string[] = KFR_VERSION_STRING;
 
-constexpr int version_major = KFR_VERSION_MAJOR;
-constexpr int version_minor = KFR_VERSION_MINOR;
-constexpr int version_patch = KFR_VERSION_PATCH;
-constexpr int version       = KFR_VERSION;
+constexpr inline int version_major = KFR_VERSION_MAJOR;
+constexpr inline int version_minor = KFR_VERSION_MINOR;
+constexpr inline int version_patch = KFR_VERSION_PATCH;
+constexpr inline int version       = KFR_VERSION;
 
 /// @brief KFR version string including architecture and compiler name
-constexpr const char version_full[] = KFR_VERSION_FULL;
+constexpr inline const char version_full[] = KFR_VERSION_FULL;
 } // namespace kfr
 #endif
 
@@ -72,8 +72,16 @@ constexpr const char version_full[] = KFR_VERSION_FULL;
 #ifdef KFR_FUNCTION_IS_INTRINSIC
 #define KFR_FUNCTION CMT_INTRINSIC
 #else
-#define KFR_FUNCTION CMT_FUNCTION
+#define KFR_FUNCTION 
 #endif
 #ifdef CMT_NATIVE_F64
 #define KFR_NATIVE_F64 CMT_NATIVE_F64
+#endif
+
+#if defined CMT_ARCH_ARM && !defined CMT_ARCH_NEON && !defined CMT_FORCE_GENERIC_CPU
+#error "ARM builds require NEON support. Add -march=native for native build or skip the check with CMT_FORCE_GENERIC_CPU=1"
+#endif
+
+#if defined CMT_ARCH_ARM && !defined CMT_COMPILER_CLANG && !defined CMT_FORCE_NON_CLANG
+#error "ARM builds require Clang compiler. Disable checking with CMT_FORCE_NON_CLANG"
 #endif

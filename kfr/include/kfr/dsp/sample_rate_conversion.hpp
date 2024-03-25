@@ -2,7 +2,7 @@
  *  @{
  */
 /*
-  Copyright (C) 2016 D Levin (https://www.kfrlib.com)
+  Copyright (C) 2016-2022 Fractalium Ltd (https://www.kfrlib.com)
   This file is part of KFR
 
   KFR is free software: you can redistribute it and/or modify
@@ -123,7 +123,7 @@ public:
                 jj = jj - taps + 1;
         }
 
-        const T s = reciprocal(sum(filter)) * interpolation_factor * scale;
+        const T s = reciprocal(sum(filter)) * static_cast<ftype>(interpolation_factor * scale);
         filter    = filter * s;
     }
 
