@@ -128,7 +128,7 @@ void JackCpp::AudioIO::createClient(std::string name, unsigned int inPorts, unsi
 	if (inPorts > 0){
 		for(unsigned int i = 0; i < inPorts; i++){
 			std::string portname = "input";
-			portname.append(ToString(i));
+			portname.append(ToString(i+1));
 			mInputPorts.push_back(
 					jack_port_register (mJackClient, portname.c_str(), JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0));
 			mPortNames.push_back(portname);
@@ -140,7 +140,7 @@ void JackCpp::AudioIO::createClient(std::string name, unsigned int inPorts, unsi
 	if (outPorts > 0){
 		for(unsigned int i = 0; i < outPorts; i++){
 			std::string portname = "output";
-			portname.append(ToString(i));
+			portname.append(ToString(i+1));
 			mOutputPorts.push_back(
 					jack_port_register (mJackClient, portname.c_str(), JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0));
 			mPortNames.push_back(portname);
