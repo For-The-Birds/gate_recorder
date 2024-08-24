@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 
 project(gate_recorder LANGUAGES CXX)
 
+set (CMAKE_VERBOSE_MAKEFILE TRUE)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -16,7 +18,10 @@ target_include_directories(jackcpp PUBLIC
     $<INSTALL_INTERFACE:include/jackcpp>
     )
 
+#set(ENABLE_DFT ON)
 add_subdirectory(kfr)
+
+set(PLOG_BUILD_SAMPLES OFF)
 add_subdirectory(plog)
 
 set(CXXOPTS_BUILD_EXAMPLES OFF)
@@ -26,7 +31,7 @@ add_subdirectory(cxxopts)
 
 add_executable(gate_recorder main.cpp gaterecorder.cpp)
 
-target_link_libraries(gate_recorder kfr kfr_dft kfr_io jackcpp jack tcmalloc cxxopts plog)
+target_link_libraries(gate_recorder kfr kfr_io jackcpp jack tcmalloc cxxopts plog)
 
 install(
     TARGETS gate_recorder
