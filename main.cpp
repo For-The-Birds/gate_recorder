@@ -54,6 +54,9 @@ int main(int argc, const char ** argv)
 
     try {
         auto o = options.parse(argc, argv);
+        // how to check if no options given?
+        if (o.count("o") == 0)
+            std::cout << options.help(), exit(0);
 
         quiet = o["q"].as<bool>();
 
