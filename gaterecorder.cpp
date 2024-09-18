@@ -40,10 +40,11 @@ void audio_dumper(GateRecorder::buffer_type buf, kfr::audio_format af, std::stri
     }
 }
 
-GateRecorder::GateRecorder(float loudness, float loudness_p, float cutoff_,
+GateRecorder::GateRecorder(std::string jname,
+                           float loudness, float loudness_p, float cutoff_,
                            float rolloff_, float before_, float after_, float wait_,
                            float event_)
-    : JackCpp::AudioIO("gate_recorder", 2, 2)
+    : JackCpp::AudioIO(jname, 1, 1)
     , loudness_threshold(loudness)
     , passthrough_delta_threshold(loudness_p)
     , cutoff(cutoff_)
@@ -222,6 +223,8 @@ void GateRecorder::update_ebu()
     my_printf("i:%5.2f  ", loudness_intergrated);
     my_printf("l:%5.2f  ", loudness_range_low);
     my_printf("h:%5.2f  ", loudness_range_high);
+    // TODO: make sense of intergrator:
+    // if (time_pass) ebur128.resetr();
 }
 
 GateRecorder::buffer_type GateRecorder::bflush(size_t tail_return)

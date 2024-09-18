@@ -39,6 +39,7 @@ int main(int argc, const char ** argv)
                              "Records and/or passes through loud audio frames, "
                              "like gate, but keeps some pre-buffer ans post-buffer");
     options.add_options()
+        ("j,jack_name", "Jackd client name", cxxopts::value<std::string>()->default_value("gate_recorder"))
         ("l,loudness", "Loudness threshold for recording", cxxopts::value<float>()->default_value("-40"))
         ("p,passthrough", "Loudness threshold for passthrough", cxxopts::value<float>()->default_value("-50"))
         ("b,before", "Keep this amount of seconds before the event", cxxopts::value<float>()->default_value("0.2"))
@@ -69,6 +70,7 @@ int main(int argc, const char ** argv)
         }
 
         GateRecorder gr(
+                    o["j"].as<std::string>(),
                     o["l"].as<float>(),
                     o["p"].as<float>(),
                     o["c"].as<float>(),

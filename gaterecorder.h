@@ -15,7 +15,8 @@ public:
     static constexpr size_t fftsize = 1024;
     static constexpr size_t chunk_size = 128;
 
-    GateRecorder(float loudness,
+    GateRecorder(std::string jname,
+                 float loudness,
                  float loudness_p,
                  float cutoff_,
                  float rolloff_,
