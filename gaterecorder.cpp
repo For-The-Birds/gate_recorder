@@ -186,13 +186,13 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
     if (frame_loud)
         my_printf("  loud frame\n");
     else if (loudness_momentary > passthrough_delta_threshold)
-        my_printf("  momentary > passthrough\n");
+        my_printf("  momentary > passthrough\r");
     else if (loudness_short > passthrough_delta_threshold)
         my_printf("  short > passthrough\n");
     else if (consecutive_loud_frames > 0)
         my_printf("  clf:%d", consecutive_loud_frames);
     else
-        my_printf("\r");
+        my_printf("                         \r");
     fflush(stdout);
     return 0;
 }
