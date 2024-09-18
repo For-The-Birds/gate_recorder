@@ -183,6 +183,7 @@ int GateRecorder::audioCallback(jack_nframes_t nframes, JackCpp::AudioIO::audioB
         buffers_past_loud = max_buffers_wait+1; // avoid overflow
     }
 
+    my_printf(" buffers:%d", buffers_buffer.size());
     if (frame_loud)
         my_printf("  loud frame\n");
     else if (loudness_momentary > passthrough_delta_threshold)
