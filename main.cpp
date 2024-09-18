@@ -1,5 +1,7 @@
 #include <stdlib.h>
 
+#include <csignal>
+
 #include "gaterecorder.h"
 
 #include <cxxopts.hpp>
@@ -13,8 +15,23 @@ using namespace kfr;
 
 bool quiet;
 
+
+namespace
+{
+    volatile std::sig_atomic_t gSignalStatus = 0;
+}
+
+void signal_handler(int signal)
+{
+    gSignalStatus = signal;
+}
+
 int main(int argc, const char ** argv)
 {
+    std::signal(SIGINT, signal_handler);
+    std::signal(SIGTERM, signal_handler);
+
+
     static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
     plog::init(plog::verbose, &consoleAppender);
 
@@ -57,8 +74,18 @@ int main(int argc, const char ** argv)
                     o["a"].as<float>(),
                     o["w"].as<float>(),
                     o["e"].as<float>());
-        while(1)
-            sleep(100500);
+
+        while(true) {
+            usleep(10);
+            if (gSignalStatus != 0) {
+                printf("signal %d\n", gSignalStatus); fflush(stdout);
+                if (gSignalStatus == SIGINT || gSignalStatus == SIGTERM) {
+                    gr.stop();
+                    return 0;
+                }
+                gSignalStatus = 0;
+            }
+        }
 
     }
     catch (cxxopts::OptionException & e)
