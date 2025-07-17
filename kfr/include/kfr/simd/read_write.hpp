@@ -2,7 +2,7 @@
  *  @{
  */
 /*
-  Copyright (C) 2016-2022 Fractalium Ltd (https://www.kfrlib.com)
+  Copyright (C) 2016-2023 Dan Cazarin (https://www.kfrlib.com)
   This file is part of KFR
 
   KFR is free software: you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 #pragma once
 
 #include "impl/read_write.hpp"
+#include <array>
 
 namespace kfr
 {
@@ -95,9 +96,9 @@ KFR_INTRINSIC vec<T, Nout * groupsize> gather_stride(const T* base, size_t strid
     if constexpr (Nout > 2)
     {
         constexpr size_t Nlow = prev_poweroftwo(Nout - 1);
-        return concat(
-            internal::gather_stride_s<Nlow, groupsize>(base, stride, csizeseq<Nlow>),
-            internal::gather_stride_s<Nout - Nlow, groupsize>(base + Nlow * stride, stride, csizeseq<Nout - Nlow>));
+        return concat(internal::gather_stride_s<Nlow, groupsize>(base, stride, csizeseq<Nlow>),
+                      internal::gather_stride_s<Nout - Nlow, groupsize>(base + Nlow * stride, stride,
+                                                                        csizeseq<Nout - Nlow>));
     }
     else
         return internal::gather_stride_s<Nout, groupsize>(base, stride, csizeseq<Nout>);
@@ -117,7 +118,7 @@ KFR_INTRINSIC vec<T, N * groupsize> gather_helper(const T* base, const vec<IT, N
 {
     return concat(read<groupsize>(base + groupsize * offset[Indices])...);
 }
-}
+} // namespace internal
 template <size_t groupsize = 1, typename T, size_t N, typename IT>
 KFR_INTRINSIC vec<T, N * groupsize> gather(const T* base, const vec<IT, N>& offset)
 {
@@ -126,7 +127,7 @@ KFR_INTRINSIC vec<T, N * groupsize> gather(const T* base, const vec<IT, N>& offs
 
 namespace internal
 {
-template <size_t groupsize, typename T, size_t N, size_t Nout = N* groupsize, typename IT, size_t... Indices>
+template <size_t groupsize, typename T, size_t N, size_t Nout = N * groupsize, typename IT, size_t... Indices>
 KFR_INTRINSIC void scatter_helper(T* base, const vec<IT, N>& offset, const vec<T, Nout>& value,
                                   csizes_t<Indices...>)
 {
@@ -141,7 +142,7 @@ KFR_INTRINSIC void scatter_helper_s(T* base, size_t stride, const vec<T, N>& val
 }
 } // namespace internal
 
-template <size_t groupsize = 1, typename T, size_t N, size_t Nout = N* groupsize, typename IT>
+template <size_t groupsize = 1, typename T, size_t N, size_t Nout = N * groupsize, typename IT>
 KFR_INTRINSIC void scatter(T* base, const vec<IT, N>& offset, const vec<T, Nout>& value)
 {
     return internal::scatter_helper<groupsize>(base, offset, value, csizeseq<N>);
@@ -185,39 +186,45 @@ struct stride_pointer<const T, groupsize>
     }
 };
 
+template <typename T, size_t N>
+KFR_INTRINSIC vec<T, N> to_vec(const std::array<T, N>& a)
+{
+    return read<N>(a.data());
+}
+
 template <typename T>
-constexpr T partial_masks[] = { constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
-                                constants<T>::allones(),
+constexpr T partial_masks[] = { special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
+                                special_constants<T>::allones(),
                                 T(),
                                 T(),
                                 T(),

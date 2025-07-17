@@ -2,7 +2,7 @@
  *  @{
  */
 /*
-  Copyright (C) 2016-2022 Fractalium Ltd (https://www.kfrlib.com)
+  Copyright (C) 2016-2023 Dan Cazarin (https://www.kfrlib.com)
   This file is part of KFR
 
   KFR is free software: you can redistribute it and/or modify
@@ -36,6 +36,32 @@
 namespace kfr
 {
 
+inline namespace CMT_ARCH_NAME
+{
+namespace intrinsics
+{
+struct name_test_impl
+{
+};
+} // namespace intrinsics
+} // namespace CMT_ARCH_NAME
+
+template <typename T, cpu_t cpu>
+struct dft_name_impl
+{
+};
+
+template <typename Class>
+inline const char* dft_name(Class*)
+{
+    constexpr static size_t prefix_len = ctype_name<intrinsics::name_test_impl>().length() - 14;
+    static constexpr cstring full_name = ctype_name<std::decay_t<Class>>();
+    static constexpr cstring name_arch =
+        concat_cstring(full_name.slice(csize<prefix_len>), make_cstring("("),
+                       make_cstring(CMT_STRINGIFY(CMT_ARCH_NAME)), make_cstring(")"));
+    return name_arch.c_str();
+}
+
 #define DFT_STAGE_FN                                                                                         \
     KFR_MEM_INTRINSIC void do_execute(cdirect_t, complex<T>* out, const complex<T>* in, u8* temp) final      \
     {                                                                                                        \
@@ -68,14 +94,19 @@ CMT_PRAGMA_GNU(GCC diagnostic push)
 CMT_PRAGMA_GNU(GCC diagnostic ignored "-Wassume")
 #endif
 
-template <typename Stage, typename T, typename... Args>
-void add_stage(dft_plan<T>* self, Args... args)
+template <typename Stage, bool add_stages = true, typename T, typename... Args>
+void add_stage(dft_plan<T>* plan, Args... args)
 {
     dft_stage<T>* stage = new Stage(args...);
     stage->need_reorder = true;
-    self->data_size += stage->data_size;
-    self->temp_size += stage->temp_size;
-    self->stages.push_back(dft_stage_ptr<T>(stage));
+    plan->data_size += stage->data_size;
+    plan->temp_size += stage->temp_size;
+    plan->all_stages.push_back(dft_stage_ptr<T>(stage));
+    if constexpr (add_stages)
+    {
+        plan->stages[0].push_back(stage);
+        plan->stages[1].push_back(stage);
+    }
 }
 
 } // namespace CMT_ARCH_NAME

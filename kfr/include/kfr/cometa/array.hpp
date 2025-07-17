@@ -33,10 +33,10 @@ public:
     constexpr array_ref(array_ref&&) CMT_NOEXCEPT      = default;
 #ifdef CMT_COMPILER_GNU
     constexpr array_ref& operator=(const array_ref&) CMT_NOEXCEPT = default;
-    constexpr array_ref& operator=(array_ref&&) CMT_NOEXCEPT = default;
+    constexpr array_ref& operator=(array_ref&&) CMT_NOEXCEPT      = default;
 #else
     array_ref& operator=(const array_ref&) = default;
-    array_ref& operator=(array_ref&&) = default;
+    array_ref& operator=(array_ref&&)      = default;
 #endif
 
     template <size_t N>
@@ -102,14 +102,14 @@ inline array_ref<T> make_array_ref(T* data, std::size_t size)
 }
 
 template <typename Container, CMT_ENABLE_IF(has_data_size<Container>),
-          typename T = remove_pointer<decltype(std::declval<Container>().data())>>
+          typename T = std::remove_pointer_t<decltype(std::declval<Container>().data())>>
 inline array_ref<T> make_array_ref(Container& cont)
 {
     return array_ref<T>(cont.data(), cont.size());
 }
 
 template <typename Container, CMT_ENABLE_IF(has_data_size<Container>),
-          typename T = remove_pointer<decltype(std::declval<Container>().data())>>
+          typename T = std::remove_pointer_t<decltype(std::declval<Container>().data())>>
 inline array_ref<const T> make_array_ref(const Container& cont)
 {
     return array_ref<const T>(cont.data(), cont.size());

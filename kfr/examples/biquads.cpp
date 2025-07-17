@@ -1,11 +1,13 @@
 /**
- * KFR (http://kfrlib.com)
- * Copyright (C) 2016-2022 Fractalium Ltd
+ * KFR (https://www.kfrlib.com)
+ * Copyright (C) 2016-2023 Dan Cazarin
  * See LICENSE.txt for details
  */
 
 #include <kfr/base.hpp>
-#include <kfr/dsp.hpp>
+#include <kfr/dsp/biquad.hpp>
+#include <kfr/dsp/biquad_design.hpp>
+#include <kfr/dsp/special.hpp>
 #include <kfr/io.hpp>
 
 using namespace kfr;
