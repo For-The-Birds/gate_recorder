@@ -1,6 +1,6 @@
 /**
- * KFR (http://kfrlib.com)
- * Copyright (C) 2016-2022 Fractalium Ltd
+ * KFR (https://www.kfrlib.com)
+ * Copyright (C) 2016-2023 Dan Cazarin
  * See LICENSE.txt for details
  */
 
@@ -42,6 +42,9 @@ int main()
     output = window_cosine(output.size());
     plot_save("window_cosine", output, options + ", title='Cosine window'");
 
+    output = window_cosine_np(output.size());
+    plot_save("window_cosine_np", output, options + ", title='Cosine window (numpy compatible)'");
+
     output = window_bartlett_hann(output.size());
     plot_save("window_bartlett_hann", output, options + ", title='Bartlett-Hann window'");
 
@@ -56,6 +59,9 @@ int main()
 
     output = window_kaiser(output.size(), 2.5);
     plot_save("window_kaiser", output, options + ", title='Kaiser window'");
+
+    output = window_planck_taper(output.size(), 0.1);
+    plot_save("window_planck_taper", output, options + ", title='Planck-taper window'");
 
     println("SVG plots have been saved to svg directory");
 

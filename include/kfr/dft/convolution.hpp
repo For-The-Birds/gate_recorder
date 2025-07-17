@@ -2,7 +2,7 @@
  *  @{
  */
 /*
-  Copyright (C) 2016-2022 Fractalium Ltd (https://www.kfrlib.com)
+  Copyright (C) 2016-2023 Dan Cazarin (https://www.kfrlib.com)
   This file is part of KFR
 
   KFR is free software: you can redistribute it and/or modify
@@ -80,18 +80,18 @@ namespace internal
 {
 /// @brief Utility class to abstract real/complex differences
 template <typename T>
-struct dft_conv_plan: public dft_plan_real<T>
+struct dft_conv_plan : public dft_plan_real<T>
 {
     dft_conv_plan(size_t size) : dft_plan_real<T>(size, dft_pack_format::Perm) {}
-    
+
     size_t csize() const { return this->size / 2; }
 };
 
 template <typename T>
-struct dft_conv_plan<complex<T>>: public dft_plan<T>
+struct dft_conv_plan<complex<T>> : public dft_plan<T>
 {
     dft_conv_plan(size_t size) : dft_plan<T>(size) {}
-    
+
     size_t csize() const { return this->size; }
 };
 } // namespace internal
@@ -109,7 +109,7 @@ public:
     size_t input_block_size() const { return block_size; }
 
 protected:
-    void process_expression(T* dest, const expression_pointer<T>& src, size_t size) final
+    void process_expression(T* dest, const expression_handle<T>& src, size_t size) final
     {
         univector<T> input = truncate(src, size);
         process_buffer(dest, input.data(), input.size());
@@ -117,8 +117,8 @@ protected:
     void process_buffer(T* output, const T* input, size_t size) final;
 
     using ST                       = subtype<T>;
-    static constexpr auto real_fft = !std::is_same<T, complex<ST>>::value;
-    using plan_t = internal::dft_conv_plan<T>;
+    constexpr static bool real_fft = !std::is_same_v<T, complex<ST>>;
+    using plan_t                   = internal::dft_conv_plan<T>;
 
     // Length of filter data.
     size_t data_size;

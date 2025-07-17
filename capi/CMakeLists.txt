@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2022 Fractalium Ltd (http://www.kfrlib.com)
+# Copyright (C) 2016-2023 Dan Cazarin (https://www.kfrlib.com)
 # This file is part of KFR
 #
 # KFR is free software: you can redistribute it and/or modify
@@ -37,10 +37,13 @@ if (APPLE)
 endif ()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/lib)
 
 add_library(kfr_capi_all INTERFACE)
@@ -82,6 +85,11 @@ add_c_library(sse41)
 add_c_library(avx)
 add_c_library(avx2)
 add_c_library(avx512)
+
+link_as_whole(kfr_capi_all INTERFACE kfr_capi_sse2)
+if (NOT WIN32)
+    link_as_whole(kfr_capi_all_pic INTERFACE kfr_capi_sse2_pic)
+endif()
 
 target_compile_definitions(
     kfr_capi

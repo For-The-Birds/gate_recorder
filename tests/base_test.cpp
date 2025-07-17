@@ -1,13 +1,13 @@
 /**
- * KFR (http://kfrlib.com)
- * Copyright (C) 2016-2022 Fractalium Ltd
+ * KFR (https://www.kfrlib.com)
+ * Copyright (C) 2016-2023 Dan Cazarin
  * See LICENSE.txt for details
  */
 
 #include <kfr/testo/testo.hpp>
 
-#include <kfr/io.hpp>
-#include <kfr/simd.hpp>
+// #include <kfr/io.hpp>
+#include <kfr/base.hpp>
 
 using namespace kfr;
 
@@ -92,23 +92,24 @@ TEST(test_basic)
     CHECK(inrange(pack(1, 2, 3), 1, 1) == make_mask<int>(true, false, false));
 }
 
-TEST(test_gen_expj)
-{
-    kfr::univector<cbase> v = kfr::truncate(kfr::gen_expj(0.f, constants<float>::pi_s(2) * 0.1f), 1000);
-    CHECK(rms(cabs(v.slice(990) -
-                   univector<cbase>({ cbase(1., +0.00000000e+00), cbase(0.80901699, +5.87785252e-01),
-                                      cbase(0.30901699, +9.51056516e-01), cbase(-0.30901699, +9.51056516e-01),
-                                      cbase(-0.80901699, +5.87785252e-01), cbase(-1., +1.22464680e-16),
-                                      cbase(-0.80901699, -5.87785252e-01),
-                                      cbase(-0.30901699, -9.51056516e-01), cbase(0.30901699, -9.51056516e-01),
-                                      cbase(0.80901699, -5.87785252e-01) }))) < 0.00006); // error here depends on vector width
-                                      // In most cases error is much lower (less than 0.00001)
-}
+TEST(ctti) { CHECK(cometa::type_name<float>() == std::string("float")); }
 
-TEST(ctti)
+#ifdef KFR_USE_STD_ALLOCATION
+TEST(std_allocation)
 {
-    CHECK(cometa::type_name<float>() == std::string("float"));
+    univector<float> u;
+    std::vector<float>& v = u;
+
+    std::vector<float> v2{ 1, 2, 3, 4 };
+
+    // Technically an UB but ok with all sane compilers
+    reinterpret_cast<univector<float>&>(v2) += 100.f;
+    CHECK(v2[0] == 101);
+    CHECK(v2[1] == 102);
+    CHECK(v2[2] == 103);
+    CHECK(v2[3] == 104);
 }
+#endif
 
 } // namespace CMT_ARCH_NAME
 

@@ -2,7 +2,7 @@
  *  @{
  */
 /*
-  Copyright (C) 2016-2022 Fractalium Ltd (https://www.kfrlib.com)
+  Copyright (C) 2016-2023 Dan Cazarin (https://www.kfrlib.com)
   This file is part of KFR
 
   KFR is free software: you can redistribute it and/or modify
@@ -262,19 +262,19 @@ extern "C"
 
     void kfr_dct_execute_f32(KFR_DCT_PLAN_F32* plan, float* out, const float* in, uint8_t* temp)
     {
-        reinterpret_cast<kfr::dct_plan<float>*>(plan)->execute(out, in, temp);
+        reinterpret_cast<kfr::dct_plan<float>*>(plan)->execute(out, in, temp, kfr::cfalse);
     }
     void kfr_dct_execute_f64(KFR_DCT_PLAN_F64* plan, double* out, const double* in, uint8_t* temp)
     {
-        reinterpret_cast<kfr::dct_plan<double>*>(plan)->execute(out, in, temp);
+        reinterpret_cast<kfr::dct_plan<double>*>(plan)->execute(out, in, temp, kfr::cfalse);
     }
     void kfr_dct_execute_inverse_f32(KFR_DCT_PLAN_F32* plan, float* out, const float* in, uint8_t* temp)
     {
-        reinterpret_cast<kfr::dct_plan<float>*>(plan)->execute(out, in, temp);
+        reinterpret_cast<kfr::dct_plan<float>*>(plan)->execute(out, in, temp, kfr::ctrue);
     }
     void kfr_dct_execute_inverse_f64(KFR_DCT_PLAN_F64* plan, double* out, const double* in, uint8_t* temp)
     {
-        reinterpret_cast<kfr::dct_plan<double>*>(plan)->execute(out, in, temp);
+        reinterpret_cast<kfr::dct_plan<double>*>(plan)->execute(out, in, temp, kfr::ctrue);
     }
 
     void kfr_dct_delete_plan_f32(KFR_DCT_PLAN_F32* plan)
@@ -290,41 +290,71 @@ extern "C"
 
     KFR_FILTER_F32* kfr_filter_create_fir_plan_f32(const kfr_f32* taps, size_t size)
     {
+#ifndef CMT_MULTI
+        return reinterpret_cast<KFR_FILTER_F32*>(make_fir_filter<float>(make_univector(taps, size)));
+#else
         return reinterpret_cast<KFR_FILTER_F32*>(
             make_fir_filter<float>(cpu_t::runtime, make_univector(taps, size)));
+#endif
     }
     KFR_FILTER_F64* kfr_filter_create_fir_plan_f64(const kfr_f64* taps, size_t size)
     {
+#ifndef CMT_MULTI
+        return reinterpret_cast<KFR_FILTER_F64*>(make_fir_filter<double>(make_univector(taps, size)));
+#else
         return reinterpret_cast<KFR_FILTER_F64*>(
             make_fir_filter<double>(cpu_t::runtime, make_univector(taps, size)));
+#endif
     }
 
     KFR_FILTER_F32* kfr_filter_create_convolution_plan_f32(const kfr_f32* taps, size_t size,
                                                            size_t block_size)
     {
+#ifndef CMT_MULTI
+        return reinterpret_cast<KFR_FILTER_F32*>(
+            make_convolve_filter<float>(make_univector(taps, size), block_size ? block_size : 1024));
+#else
         return reinterpret_cast<KFR_FILTER_F32*>(make_convolve_filter<float>(
             cpu_t::runtime, make_univector(taps, size), block_size ? block_size : 1024));
+#endif
     }
     KFR_FILTER_F64* kfr_filter_create_convolution_plan_f64(const kfr_f64* taps, size_t size,
                                                            size_t block_size)
     {
+#ifndef CMT_MULTI
+        return reinterpret_cast<KFR_FILTER_F64*>(
+            make_convolve_filter<double>(make_univector(taps, size), block_size ? block_size : 1024));
+#else
         return reinterpret_cast<KFR_FILTER_F64*>(make_convolve_filter<double>(
             cpu_t::runtime, make_univector(taps, size), block_size ? block_size : 1024));
+#endif
     }
 
     KFR_FILTER_F32* kfr_filter_create_iir_plan_f32(const kfr_f32* sos, size_t sos_count)
     {
         if (sos_count < 1 || sos_count > 64)
             return nullptr;
+
+#ifndef CMT_MULTI
+        return reinterpret_cast<KFR_FILTER_F32*>(
+            make_biquad_filter<float, 64>(reinterpret_cast<const biquad_params<float>*>(sos), sos_count));
+#else
         return reinterpret_cast<KFR_FILTER_F32*>(make_biquad_filter<float, 64>(
             cpu_t::runtime, reinterpret_cast<const biquad_params<float>*>(sos), sos_count));
+#endif
     }
     KFR_FILTER_F64* kfr_filter_create_iir_plan_f64(const kfr_f64* sos, size_t sos_count)
     {
         if (sos_count < 1 || sos_count > 64)
             return nullptr;
+
+#ifndef CMT_MULTI
+        return reinterpret_cast<KFR_FILTER_F64*>(
+            make_biquad_filter<double, 64>(reinterpret_cast<const biquad_params<double>*>(sos), sos_count));
+#else
         return reinterpret_cast<KFR_FILTER_F64*>(make_biquad_filter<double, 64>(
             cpu_t::runtime, reinterpret_cast<const biquad_params<double>*>(sos), sos_count));
+#endif
     }
 
     void kfr_filter_process_f32(KFR_FILTER_F32* plan, kfr_f32* output, const kfr_f32* input, size_t size)
