@@ -1,13 +1,13 @@
-# KFR 5 Documentation
+# KFR 6 Documentation
 
 ## Getting started
 
-* [What's new in KFR 5](whatsnew5.md)
+* [What's new in KFR 6](whatsnew6.md)
 * [Installation](installation.md)
 * [Basics](basics.md)
 * [Expressions](expressions.md)
 * [C API](capi.md)
-* [Upgrade to KFR 5](upgrade5.md)
+* [Upgrade to KFR 6](upgrade6.md)
 
 ## Guides
 
@@ -41,6 +41,6 @@
 
 * [Function reference](auto/refindex.md)
 
-## KFR 4
+## KFR 5
 
-For KFR 4 documentation, see https://kfr.dev/docs/v4
+For KFR 5 documentation, see https://kfr.dev/docs/v5

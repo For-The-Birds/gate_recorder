@@ -32,7 +32,7 @@
 
 #include "cident.h"
 
-#define KFR_VERSION_MAJOR 5
+#define KFR_VERSION_MAJOR 6
 #define KFR_VERSION_MINOR 2
 #define KFR_VERSION_PATCH 0
 #define KFR_VERSION_LABEL ""
@@ -68,9 +68,16 @@
 #define KFR_BUILD_DETAILS_2 ""
 #endif
 
+#ifdef KFR_ENABLED_ARCHS
+#define KFR_ENABLED_ARCHS_LIST "[" KFR_ENABLED_ARCHS "] "
+#else
+#define KFR_ENABLED_ARCHS_LIST ""
+#endif
+
 #define KFR_VERSION_FULL                                                                                     \
     "KFR " KFR_VERSION_STRING KFR_DEBUG_STR                                                                  \
-    " " CMT_STRINGIFY(CMT_ARCH_NAME) " " CMT_ARCH_BITNESS_NAME " (" CMT_COMPILER_FULL_NAME "/" CMT_OS_NAME   \
+    " " CMT_STRINGIFY(CMT_ARCH_NAME) " " KFR_ENABLED_ARCHS_LIST CMT_ARCH_BITNESS_NAME                        \
+                                     " (" CMT_COMPILER_FULL_NAME "/" CMT_OS_NAME                             \
                                      ")" KFR_BUILD_DETAILS_1 KFR_BUILD_DETAILS_2
 
 #ifdef __cplusplus
