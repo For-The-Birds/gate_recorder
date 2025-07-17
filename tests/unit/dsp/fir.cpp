@@ -12,6 +12,27 @@ namespace kfr
 inline namespace CMT_ARCH_NAME
 {
 
+TEST(fir_state)
+{
+    fir_state<float, float> state(univector<float>{ 1, 2, 3, 4, 5, 6 });
+    {
+        const expression_fir<float, float, expression_dimensions<1, float>, false> stateful(
+            dimensions<1>(0.f), state);
+        CHECK(&stateful.state->delayline_cursor != &state.delayline_cursor);
+
+        const expression_fir<float, float, expression_dimensions<1, float>, true> stateless(
+            dimensions<1>(0.f), std::ref(state));
+        CHECK(&stateless.state->delayline_cursor == &state.delayline_cursor);
+    }
+    {
+        auto stateful = fir(dimensions<1>(0.f), state.params);
+        CHECK(&stateful.state->delayline_cursor != &state.delayline_cursor);
+
+        auto stateless = fir(dimensions<1>(0.f), std::ref(state));
+        CHECK(&stateless.state->delayline_cursor == &state.delayline_cursor);
+    }
+}
+
 TEST(fir)
 {
 #ifdef CMT_COMPILER_IS_MSVC
@@ -79,7 +100,7 @@ TEST(fir)
                           counter() + sequence(1, 2, -10, 100) + sequence(0, -7, 0.5);
                       const univector<T, 6> taps{ 1, 2, -2, 0.5, 0.0625, 4 };
 
-                      CHECK_EXPRESSION(fir(data, taps), 100,
+                      CHECK_EXPRESSION(fir(data, fir_params{ taps }), 100,
                                        [&](size_t index) -> T
                                        {
                                            T result = 0;
@@ -90,7 +111,7 @@ TEST(fir)
 
                       fir_state<T> state(taps.ref());
 
-                      CHECK_EXPRESSION(fir(state, data), 100,
+                      CHECK_EXPRESSION(fir(data, std::ref(state)), 100,
                                        [&](size_t index) -> T
                                        {
                                            T result = 0;
@@ -110,7 +131,7 @@ TEST(fir)
 
                       short_fir_state<9, T> state2(taps);
 
-                      CHECK_EXPRESSION(short_fir<taps.size()>(state2, data), 100,
+                      CHECK_EXPRESSION(short_fir(data, std::ref(state2)), 100,
                                        [&](size_t index) -> T
                                        {
                                            T result = 0;
@@ -119,7 +140,7 @@ TEST(fir)
                                            return result;
                                        });
 
-                      CHECK_EXPRESSION(moving_sum<taps.size()>(data), 100,
+                      CHECK_EXPRESSION(moving_sum(data, taps.size()), 100,
                                        [&](size_t index) -> T
                                        {
                                            T result = 0;
@@ -130,7 +151,7 @@ TEST(fir)
 
                       moving_sum_state<T, 131> msstate1;
 
-                      CHECK_EXPRESSION(moving_sum(msstate1, data), 100,
+                      CHECK_EXPRESSION(moving_sum(data, std::ref(msstate1)), 100,
                                        [&](size_t index) -> T
                                        {
                                            T result = 0;
@@ -141,7 +162,7 @@ TEST(fir)
 
                       moving_sum_state<T> msstate2(133);
 
-                      CHECK_EXPRESSION(moving_sum(msstate2, data), 100,
+                      CHECK_EXPRESSION(moving_sum(data, std::ref(msstate2)), 100,
                                        [&](size_t index) -> T
                                        {
                                            T result = 0;
@@ -160,7 +181,7 @@ TEST(fir_different)
     //    const univector<double, 6> taps{ 1, 2, -2, 0.5, 0.0625, 4 };
     const univector<double, 4> taps{ 1, 2, 3, 4 };
 
-    CHECK_EXPRESSION(fir(data, taps), 100,
+    CHECK_EXPRESSION(fir(data, fir_params{ taps }), 100,
                      [&](size_t index) -> float
                      {
                          double result = 0.0;
@@ -177,31 +198,6 @@ TEST(fir_different)
                              result += data.get(index - i, 0.0) * taps[i];
                          return float(result);
                      });
-}
-#endif
-
-#ifdef KFR_STD_COMPLEX
-template <typename T>
-inline std::complex<T> to_std(const std::complex<T>& c)
-{
-    return c;
-}
-template <typename T>
-inline std::complex<T> from_std(const std::complex<T>& c)
-{
-    return c;
-}
-#else
-template <typename T>
-inline std::complex<T> to_std(const kfr::complex<T>& c)
-{
-    return { c.real(), c.imag() };
-}
-
-template <typename T>
-inline kfr::complex<T> from_std(const std::complex<T>& c)
-{
-    return { c.real(), c.imag() };
 }
 #endif
 
@@ -211,13 +207,13 @@ TEST(fir_complex)
         counter() * complex<float>{ 0.f, 1.f } + sequence(1, 2, -10, 100) + sequence(0, -7, 0.5f);
     const univector<float, 6> taps{ 1, 2, -2, 0.5, 0.0625, 4 };
 
-    CHECK_EXPRESSION(fir(data, taps), 100,
+    CHECK_EXPRESSION(fir(data, fir_params{ taps }), 100,
                      [&](size_t index) -> complex<float>
                      {
                          std::complex<float> result = 0.0;
                          for (size_t i = 0; i < taps.size(); i++)
-                             result = result + to_std(data.get(index - i, 0.0)) * taps[i];
-                         return from_std(result);
+                             result = result + data.get(index - i, 0.0) * taps[i];
+                         return result;
                      });
 
     CHECK_EXPRESSION(short_fir(data, taps), 100,
@@ -225,8 +221,8 @@ TEST(fir_complex)
                      {
                          std::complex<float> result = 0.0;
                          for (size_t i = 0; i < taps.size(); i++)
-                             result = result + to_std(data.get(index - i, 0.0)) * taps[i];
-                         return from_std(result);
+                             result = result + data.get(index - i, 0.0) * taps[i];
+                         return result;
                      });
 }
 } // namespace CMT_ARCH_NAME

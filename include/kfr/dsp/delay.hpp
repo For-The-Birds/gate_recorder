@@ -29,6 +29,7 @@
 #include "../base/expression.hpp"
 #include "../base/state_holder.hpp"
 #include "../base/univector.hpp"
+#include "fir.hpp"
 
 namespace kfr
 {
@@ -48,14 +49,14 @@ struct delay_state
     {
     }
 
-    mutable univector<T, Tag> data;
-    mutable size_t cursor;
+    univector<T, Tag> data;
+    size_t cursor;
 };
 
 template <typename T>
 struct delay_state<T, 1, 1>
 {
-    mutable T data = T(0);
+    T data = T(0);
 };
 
 template <size_t delay, typename E, bool stateless, univector_tag STag>
@@ -75,8 +76,8 @@ struct expression_delay : expression_with_arguments<E>, public expression_traits
     using T = value_type;
     using expression_with_arguments<E>::expression_with_arguments;
 
-    expression_delay(E&& e, const delay_state<T, delay, STag>& state)
-        : expression_with_arguments<E>(std::forward<E>(e)), state(state)
+    expression_delay(E&& e, state_holder<delay_state<T, delay, STag>, stateless> state)
+        : expression_with_arguments<E>(std::forward<E>(e)), state(std::move(state))
     {
     }
 
@@ -111,7 +112,7 @@ struct expression_delay : expression_with_arguments<E>, public expression_traits
         return concat_and_slice<0, N>(out, in);
     }
 
-    state_holder<const delay_state<T, delay, STag>, stateless> state;
+    mutable state_holder<delay_state<T, delay, STag>, stateless> state;
 };
 
 template <typename E, bool stateless, univector_tag STag>
@@ -145,7 +146,7 @@ struct expression_delay<1, E, stateless, STag> : expression_with_arguments<E>, e
         self.state->data    = in[N - 1];
         return out;
     }
-    state_holder<const delay_state<T, 1, STag>, stateless> state;
+    mutable state_holder<delay_state<T, 1, STag>, stateless> state;
 };
 
 /**
@@ -166,6 +167,24 @@ KFR_INTRINSIC expression_delay<samples, E1, false, samples> delay(E1&& e1)
 
 /**
  * @brief Returns template expression that applies delay to the input (uses ring buffer in state)
+ * @param state delay filter state (taken by reference)
+ * @param e1 an input expression
+ * @code
+ * univector<double, 10> v = counter();
+ * delay_state<double, 4> state;
+ * auto d = delay(state, v);
+ * @endcode
+ */
+template <size_t samples, typename T, typename E1, univector_tag STag>
+KFR_INTRINSIC expression_delay<samples, E1, true, STag> delay(
+    E1&& e1, std::reference_wrapper<delay_state<T, samples, STag>> state)
+{
+    static_assert(STag == tag_dynamic_vector || (samples >= 1 && samples < 1024), "");
+    return expression_delay<samples, E1, true, STag>(std::forward<E1>(e1), state);
+}
+
+/**
+ * @brief Returns template expression that applies delay to the input (uses ring buffer in state)
  * @param state delay filter state
  * @param e1 an input expression
  * @code
@@ -175,10 +194,27 @@ KFR_INTRINSIC expression_delay<samples, E1, false, samples> delay(E1&& e1)
  * @endcode
  */
 template <size_t samples, typename T, typename E1, univector_tag STag>
-KFR_INTRINSIC expression_delay<samples, E1, true, STag> delay(delay_state<T, samples, STag>& state, E1&& e1)
+[[deprecated("delay(state, expr) is deprecated. Use delay(expr, std::ref(state))")]] KFR_INTRINSIC
+    expression_delay<samples, E1, true, STag>
+    delay(delay_state<T, samples, STag>& state, E1&& e1)
 {
     static_assert(STag == tag_dynamic_vector || (samples >= 1 && samples < 1024), "");
-    return expression_delay<samples, E1, true, STag>(std::forward<E1>(e1), state);
+    return expression_delay<samples, E1, true, STag>(std::forward<E1>(e1), std::ref(state));
+}
+
+/**
+ * @brief Returns template expression that applies a fractional delay to the input
+ * @param e1 an input expression
+ * @param e1 a fractional delay in range 0..1
+ */
+template <typename T, typename E1>
+KFR_INTRINSIC expression_short_fir<2, T, expression_value_type<E1>, E1> fracdelay(E1&& e1, T delay)
+{
+    if (CMT_UNLIKELY(delay < 0))
+        delay = 0;
+    univector<T, 2> taps({ 1 - delay, delay });
+    return expression_short_fir<2, T, expression_value_type<E1>, E1>(
+        std::forward<E1>(e1), short_fir_state<2, T, expression_value_type<E1>>{ taps });
 }
 } // namespace CMT_ARCH_NAME
 } // namespace kfr

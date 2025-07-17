@@ -1,4 +1,4 @@
-/** @addtogroup biquad
+/** @addtogroup iir
  *  @{
  */
 /*
@@ -57,8 +57,8 @@ KFR_FUNCTION zpk<T> chebyshev1(int N, identity<T> rp)
         return { {}, {}, 1 };
     }
 
-    T eps = sqrt(exp10(0.1 * rp) - 1.0);
-    T mu  = 1.0 / N * std::asinh(1 / eps);
+    T eps = sqrt(exp10(T(0.1) * rp) - T(1.0));
+    T mu  = T(1.0) / N * std::asinh(1 / eps);
 
     univector<T> m = linspace(-N + 1, N + 1, N, false, ctrue);
 
@@ -66,7 +66,7 @@ KFR_FUNCTION zpk<T> chebyshev1(int N, identity<T> rp)
     univector<complex<T>> p = -csinh(make_complex(mu, theta));
     T k                     = product(-p).real();
     if (N % 2 == 0)
-        k = k / sqrt(1.0 + eps * eps);
+        k = k / sqrt(T(1.0) + eps * eps);
     return { {}, std::move(p), k };
 }
 
@@ -78,8 +78,8 @@ KFR_FUNCTION zpk<T> chebyshev2(int N, identity<T> rs)
         return { {}, {}, 1 };
     }
 
-    T de = 1.0 / sqrt(exp10(0.1 * rs) - 1);
-    T mu = std::asinh(1.0 / de) / N;
+    T de = T(1.0) / sqrt(exp10(T(0.1) * rs) - 1);
+    T mu = std::asinh(T(1.0) / de) / N;
 
     univector<T> m;
 
@@ -92,12 +92,12 @@ KFR_FUNCTION zpk<T> chebyshev2(int N, identity<T> rs)
         m = linspace(-N + 1, N + 1, N, false, ctrue);
     }
 
-    univector<complex<T>> z = -cconj(complex<T>(0, 1) / sin(m * c_pi<T> / (2.0 * N)));
+    univector<complex<T>> z = -cconj(complex<T>(0, 1) / sin(m * c_pi<T> / (T(2.0) * N)));
 
     univector<complex<T>> p =
         -cexp(complex<T>(0, 1) * c_pi<T> * linspace(-N + 1, N + 1, N, false, ctrue) / (2 * N));
     p = make_complex(sinh(mu) * real(p), cosh(mu) * imag(p));
-    p = 1.0 / p;
+    p = T(1.0) / p;
 
     T k = (product(-p) / product(-z)).real();
 
@@ -864,7 +864,7 @@ namespace internal
 template <typename T>
 KFR_FUNCTION zpk<T> bilinear(const zpk<T>& filter, identity<T> fs)
 {
-    const T fs2 = 2.0 * fs;
+    const T fs2 = T(2.0) * fs;
     zpk<T> result;
     result.z = (fs2 + filter.z) / (fs2 - filter.z);
     result.p = (fs2 + filter.p) / (fs2 - filter.p);
@@ -886,7 +886,7 @@ KFR_FUNCTION vec<T, 3> zpk2tf_poly(const complex<T>& x, const complex<T>& y)
 }
 
 template <typename T>
-KFR_FUNCTION biquad_params<T> zpk2tf(const zero_pole_pairs<T>& pairs, identity<T> k)
+KFR_FUNCTION biquad_section<T> zpk2tf(const zero_pole_pairs<T>& pairs, identity<T> k)
 {
     vec<T, 3> zz = k * zpk2tf_poly(pairs.z1, pairs.z2);
     vec<T, 3> pp = zpk2tf_poly(pairs.p1, pairs.p2);
@@ -984,8 +984,8 @@ template <typename T>
 KFR_FUNCTION zpk<T> lp2bp_zpk(const zpk<T>& filter, identity<T> wo, identity<T> bw)
 {
     zpk<T> lowpass;
-    lowpass.z = bw * 0.5 * filter.z;
-    lowpass.p = bw * 0.5 * filter.p;
+    lowpass.z = bw * T(0.5) * filter.z;
+    lowpass.p = bw * T(0.5) * filter.p;
 
     zpk<T> result;
     result.z = concatenate(lowpass.z + csqrt(csqr(lowpass.z) - wo * wo),
@@ -1003,8 +1003,8 @@ template <typename T>
 KFR_FUNCTION zpk<T> lp2bs_zpk(const zpk<T>& filter, identity<T> wo, identity<T> bw)
 {
     zpk<T> highpass;
-    highpass.z = (bw * 0.5) / filter.z;
-    highpass.p = (bw * 0.5) / filter.p;
+    highpass.z = (bw * T(0.5)) / filter.z;
+    highpass.p = (bw * T(0.5)) / filter.p;
 
     zpk<T> result;
     result.z = concatenate(highpass.z + csqrt(csqr(highpass.z) - wo * wo),
@@ -1023,66 +1023,97 @@ template <typename T>
 KFR_FUNCTION T warp_freq(T frequency, T fs)
 {
     frequency = 2 * frequency / fs;
-    fs        = 2.0;
+    fs        = T(2.0);
     T warped  = 2 * fs * tan(c_pi<T> * frequency / fs);
     return warped;
 }
 
 } // namespace internal
 
+/**
+ * @brief Calculates zero-pole-gain coefficients for the low-pass IIR filter
+ * @param filter Filter type: chebyshev1, chebyshev2, bessel, butterworth
+ * @param frequency Cutoff frequency (Hz)
+ * @param fs Sampling frequency (Hz)
+ * @return The resulting zpk filter
+ */
 template <typename T>
-KFR_FUNCTION zpk<T> iir_lowpass(const zpk<T>& filter, identity<T> frequency, identity<T> fs = 2.0)
+KFR_FUNCTION zpk<T> iir_lowpass(const zpk<T>& filter, identity<T> frequency, identity<T> fs = T(2.0))
 {
     T warped = internal::warp_freq(frequency, fs);
 
     zpk<T> result = filter;
     result        = internal::lp2lp_zpk(result, warped);
-    result        = internal::bilinear(result, 2.0); // fs = 2.0
+    result        = internal::bilinear(result, T(2.0)); // fs = 2.0
     return result;
 }
 
+
+/**
+ * @brief Calculates zero-pole-gain coefficients for the high-pass IIR filter
+ * @param filter Filter type: chebyshev1, chebyshev2, bessel, butterworth
+ * @param frequency Cutoff frequency (Hz)
+ * @param fs Sampling frequency (Hz)
+ * @return The resulting zpk filter
+ */
 template <typename T>
-KFR_FUNCTION zpk<T> iir_highpass(const zpk<T>& filter, identity<T> frequency, identity<T> fs = 2.0)
+KFR_FUNCTION zpk<T> iir_highpass(const zpk<T>& filter, identity<T> frequency, identity<T> fs = T(2.0))
 {
     T warped = internal::warp_freq(frequency, fs);
 
     zpk<T> result = filter;
     result        = internal::lp2hp_zpk(result, warped);
-    result        = internal::bilinear(result, 2.0); // fs = 2.0
+    result        = internal::bilinear(result, T(2.0)); // fs = 2.0
     return result;
 }
 
+/**
+ * @brief Calculates zero-pole-gain coefficients for the band-pass IIR filter
+ * @param filter Filter type: chebyshev1, chebyshev2, bessel, butterworth
+ * @param lowfreq Low cutoff frequency (Hz)
+ * @param lowfreq High cutoff frequency (Hz)
+ * @param fs Sampling frequency (Hz)
+ * @return The resulting zpk filter
+ */
 template <typename T>
 KFR_FUNCTION zpk<T> iir_bandpass(const zpk<T>& filter, identity<T> lowfreq, identity<T> highfreq,
-                                 identity<T> fs = 2.0)
+                                 identity<T> fs = T(2.0))
 {
     T warpedlow  = internal::warp_freq(lowfreq, fs);
     T warpedhigh = internal::warp_freq(highfreq, fs);
 
     zpk<T> result = filter;
     result        = internal::lp2bp_zpk(result, std::sqrt(warpedlow * warpedhigh), warpedhigh - warpedlow);
-    result        = internal::bilinear(result, 2.0); // fs = 2.0
+    result        = internal::bilinear(result, T(2.0)); // fs = 2.0
     return result;
 }
 
+/**
+ * @brief Calculates zero-pole-gain coefficients for the band-stop IIR filter
+ * @param filter Filter type: chebyshev1, chebyshev2, bessel, butterworth
+ * @param lowfreq Low cutoff frequency (Hz)
+ * @param lowfreq High cutoff frequency (Hz)
+ * @param fs Sampling frequency (Hz)
+ * @return The resulting zpk filter
+ */
 template <typename T>
 KFR_FUNCTION zpk<T> iir_bandstop(const zpk<T>& filter, identity<T> lowfreq, identity<T> highfreq,
-                                 identity<T> fs = 2.0)
+                                 identity<T> fs = T(2.0))
 {
     T warpedlow  = internal::warp_freq(lowfreq, fs);
     T warpedhigh = internal::warp_freq(highfreq, fs);
 
     zpk<T> result = filter;
     result        = internal::lp2bs_zpk(result, std::sqrt(warpedlow * warpedhigh), warpedhigh - warpedlow);
-    result        = internal::bilinear(result, 2.0); // fs = 2.0
+    result        = internal::bilinear(result, T(2.0)); // fs = 2.0
     return result;
 }
 
 template <typename T>
-KFR_FUNCTION std::vector<biquad_params<T>> to_sos(const zpk<T>& filter)
+KFR_FUNCTION iir_params<T> to_sos(const zpk<T>& filter)
 {
     if (filter.p.empty() && filter.z.empty())
-        return { biquad_params<T>(filter.k, 0., 0., 1., 0., 0) };
+        return { biquad_section<T>(filter.k, T(0.), T(0.), T(1.), T(0.), 0) };
 
     zpk<T> filt   = filter;
     size_t length = std::max(filter.p.size(), filter.z.size());
@@ -1206,13 +1237,26 @@ KFR_FUNCTION std::vector<biquad_params<T>> to_sos(const zpk<T>& filter)
         pairs[si].z2 = z2;
     }
 
-    std::vector<biquad_params<T>> result(n_sections);
+    iir_params<T> result(n_sections);
     for (size_t si = 0; si < n_sections; si++)
     {
         result[si] = internal::zpk2tf(pairs[n_sections - 1 - si], si == 0 ? filt.k : T(1));
     }
     return result;
 }
+
+/**
+ * @brief Returns template expressions that applies biquad filter to the input.
+ * @param e1 Input expression
+ * @param params IIR filter in ZPK form
+ * @remark This overload converts ZPK to biquad coefficients using to_sos function at every call
+ */
+template <typename T, typename E1>
+KFR_FUNCTION expression_handle<T, 1> iir(E1&& e1, const zpk<T>& params)
+{
+    return iir(std::forward<E1>(e1), to_sos(params));
+}
+
 } // namespace CMT_ARCH_NAME
 
 } // namespace kfr

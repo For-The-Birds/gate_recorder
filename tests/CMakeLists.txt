@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with KFR.
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
 add_definitions(-DKFR_TESTING=1)
 add_definitions(-DKFR_SRC_DIR=\"${CMAKE_SOURCE_DIR}\")
@@ -56,11 +56,11 @@ if (KFR_ENABLE_CAPI_BUILD)
     add_executable(capi_test capi_test.cpp)
     target_include_directories(capi_test
                                PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include)
-    target_link_libraries(capi_test PUBLIC kfr_capi)
+    target_link_libraries(capi_test PRIVATE kfr_capi)
 endif ()
 
 if (KFR_ENABLE_ASMTEST)
-    add_executable(asm_test asm_test.cpp)
+    add_executable(asm_test internal/asm_test.cpp)
     target_link_libraries(asm_test kfr)
     target_set_arch(asm_test PRIVATE avx2)
     target_compile_definitions(asm_test PRIVATE KFR_SHOW_NOT_OPTIMIZED)
@@ -79,34 +79,7 @@ if (KFR_ENABLE_ASMTEST)
         COMMAND objconv -fyasm $<TARGET_FILE:asm_test>)
 endif ()
 
-if (X86)
-    if (MSVC AND NOT CLANG)
-        add_executable(multiarch multiarch.cpp multiarch_fir_sse2.cpp
-                                 multiarch_fir_avx.cpp)
-        set_source_files_properties(multiarch_fir_sse2.cpp
-                                    PROPERTIES COMPILE_FLAGS /arch:SSE2)
-        set_source_files_properties(multiarch_fir_avx.cpp
-                                    PROPERTIES COMPILE_FLAGS /arch:AVX)
-    else ()
-        add_executable(multiarch multiarch.cpp multiarch_fir_sse2.cpp
-                                 multiarch_fir_avx.cpp)
-        set_source_files_properties(
-            multiarch_fir_sse2.cpp PROPERTIES COMPILE_FLAGS
-                                              "-mno-avx -mno-sse3 -msse2")
-        set_source_files_properties(multiarch_fir_avx.cpp
-                                    PROPERTIES COMPILE_FLAGS "-mavx -mno-avx2")
-    endif ()
-    target_link_libraries(multiarch kfr)
-endif ()
-
-set(ALL_TESTS_CPP
-    base_test.cpp
-    complex_test.cpp
-    dsp_test.cpp
-    expression_test.cpp
-    intrinsic_test.cpp
-    io_test.cpp
-    ${KFR_UNITTEST_SRC})
+set(ALL_TESTS_CPP ${KFR_UNITTEST_SRC})
 
 if (KFR_ENABLE_DFT)
     list(APPEND ALL_TESTS_CPP dft_test.cpp)
@@ -119,7 +92,7 @@ if (KFR_REGENERATE_TESTS)
     find_package(GMP)
 
     if (MPFR_FOUND AND GMP_FOUND)
-        add_executable(generate_data generate_data.cpp)
+        add_executable(generate_data internal/generate_data.cpp)
         target_link_libraries(generate_data kfr)
         target_include_directories(generate_data PRIVATE ${MPFR_INCLUDE_DIR}
                                                          ${GMP_INCLUDE_DIR})
@@ -137,16 +110,12 @@ endif ()
 
 add_executable(all_tests all_tests.cpp ${ALL_TESTS_CPP})
 target_compile_definitions(all_tests PRIVATE KFR_NO_MAIN)
-target_link_libraries(all_tests kfr use_arch)
+target_link_libraries(all_tests kfr use_arch kfr_dsp)
 if (KFR_ENABLE_DFT)
     target_link_libraries(all_tests kfr_dft)
     target_link_libraries(dft_test kfr_dft)
 endif ()
 target_link_libraries(all_tests kfr_io)
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    target_compile_options(all_tests PRIVATE /Zc:lambda)
-endif ()
 
 option(KFR_NO_PERF_TESTS "Disable performance tests" OFF)
 
@@ -158,7 +127,7 @@ function (add_x86_test ARCH)
     set(NAME ${ARCH})
 
     add_executable(all_tests_${NAME} all_tests.cpp ${ALL_TESTS_CPP}
-                                     ${KFR_IO_SRC})
+                                     ${KFR_IO_SRC} ${KFR_DSP_SRC})
     if (KFR_ENABLE_DFT)
         target_sources(all_tests_${NAME} PRIVATE ${KFR_DFT_SRC})
     endif ()
@@ -166,21 +135,6 @@ function (add_x86_test ARCH)
     target_set_arch(all_tests_${NAME} PRIVATE ${ARCH})
     target_compile_definitions(all_tests_${NAME} PRIVATE KFR_NO_MAIN)
     target_compile_definitions(all_tests_${NAME} PUBLIC KFR_ENABLE_FLAC=1)
-
-    if (KFR_ARCH_TESTS_MULTI)
-        add_library(all_tests_multiarch_${NAME} STATIC ${ALL_TESTS_MERGED_CPP}
-                                                       ${KFR_IO_SRC})
-        if (KFR_ENABLE_DFT)
-            target_sources(all_tests_multiarch_${NAME} PRIVATE ${KFR_DFT_SRC})
-        endif ()
-        target_link_libraries(all_tests_multiarch_${NAME} kfr)
-        target_set_arch(all_tests_multiarch_${NAME} PRIVATE ${ARCH})
-        target_compile_definitions(all_tests_multiarch_${NAME}
-                                   PRIVATE KFR_NO_MAIN)
-        target_compile_definitions(all_tests_multiarch_${NAME}
-                                   PUBLIC KFR_ENABLE_FLAC=1)
-    endif ()
-
 endfunction ()
 
 if (KFR_ARCH_TESTS AND KFR_ARCH_TESTS STREQUAL "ON")
@@ -201,22 +155,13 @@ if (MSVC AND NOT CLANG)
 endif ()
 
 if (KFR_ARCH_TESTS)
-
     foreach (A IN LISTS ARCH_LIST)
         add_x86_test(${A})
     endforeach ()
-
-    if (KFR_ARCH_TESTS_MULTI)
-        add_executable(all_tests_multiarch all_tests.cpp)
-        target_compile_definitions(all_tests_multiarch PRIVATE KFR_MULTI_ARCH)
-        foreach (A IN LISTS ARCH_LIST)
-            target_link_libraries(all_tests_multiarch all_tests_multiarch_${A})
-        endforeach ()
-    endif ()
 endif ()
 
 if (KFR_USE_SDE)
-    if ("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+    if (BITNESS64)
         find_program(SDE NAMES "sde64" "sde")
     else ()
         find_program(SDE NAMES "sde")
@@ -242,13 +187,16 @@ set(SDE_ARCH_avx512 -skx)
 if (NOT KFR_SKIP_TESTS)
     enable_testing()
 
-    if (X86)
-        add_test(NAME multiarch COMMAND ${EMULATOR}
-                                        ${PROJECT_BINARY_DIR}/bin/multiarch)
-
-        if (KFR_ENABLE_CAPI_BUILD)
-            add_test(NAME capi_test COMMAND ${EMULATOR}
-                                            ${PROJECT_BINARY_DIR}/bin/capi_test)
+    if (KFR_ENABLE_CAPI_BUILD)
+        add_test(NAME capi_test COMMAND ${EMULATOR}
+                                        ${PROJECT_BINARY_DIR}/bin/capi_test)
+        if (UNIX)
+            set_tests_properties(
+                capi_test
+                PROPERTIES
+                    ENVIRONMENT
+                    "LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}"
+            )
         endif ()
     endif ()
 
@@ -273,6 +221,7 @@ if (NOT KFR_SKIP_TESTS)
                  COMMAND ${SDE} ${SDE_ARCH_avx512} -chip_check_exe_only --
                          ${PROJECT_BINARY_DIR}/bin/all_tests)
     else ()
-        add_test(NAME all_tests COMMAND ${PROJECT_BINARY_DIR}/bin/all_tests)
+        add_test(NAME all_tests COMMAND ${EMULATOR}
+                                        ${PROJECT_BINARY_DIR}/bin/all_tests)
     endif ()
 endif ()

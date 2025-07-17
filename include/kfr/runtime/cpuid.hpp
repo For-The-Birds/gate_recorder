@@ -35,8 +35,7 @@
 
 namespace kfr
 {
-#ifdef CMT_ARCH_X86
-
+#if defined(CMT_ARCH_X86) && !defined(__wasm)
 struct cpu_features
 {
     u32 max;
